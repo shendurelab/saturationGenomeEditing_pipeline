@@ -1,0 +1,1747 @@
+---
+title: "Positional modeling"
+output: html_document
+---
+Notes for changes to implement in v6
+-- rename everything with 'r' (then, 'r'...)
+-- model fit for replicates separately
+-- model fit for replicate averages (compare w. above)
+
+```{r}
+#requires exon snv dataframes to be present
+#a function to extend the lowess fit to points missing on either end of the sequence (must be used on an ordered sequence vector, as supplied here. Will only fill in missing points on the ends)
+extend_fit <- function(fit_vector) {
+  if (length(which(is.na(fit_vector))) == 0) {
+    out_vector <- fit_vector
+  }
+  else {
+    min_na <- min(which(is.na(fit_vector) == TRUE))
+    min_point <- min(which(is.na(fit_vector) == FALSE))
+    min_point_val <- fit_vector[min_point]
+    max_point <- max(which(is.na(fit_vector) == FALSE))
+    max_point_val <- fit_vector[max_point]
+    max_na <- max(which(is.na(fit_vector) == TRUE))
+    out_vector <- fit_vector
+    if (min_na == 1) {
+      out_vector[min_na:min_point] <- min_point_val
+    }
+    if (max_na == length(fit_vector)) {
+      out_vector[(max_point+1):length(fit_vector)] <- max_point_val 
+    }
+  }
+  return(out_vector)
+}
+
+#X2r --
+#X2r1
+X2_posrange <- range(as.numeric(as.character(X2r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X2_posseq <- seq(from=X2_posrange[1], to=X2_posrange[2])
+X2r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X2r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X2r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X2r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X2r1_tHDR_pre_lib_pred <- predict(X2r1_tHDR_pre_lib_ratio.lo, newdata = X2_posseq, se=TRUE)
+X2r1_tHDR_pre_lib_pos_effects <- X2r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X2r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X2r1_tHDR_pre_lib_pos_effects)
+X2r1_tHDR_pre_lib_pos_effects_ci <- X2r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X2r1_tHDR_pre_lib_pred$df)
+X2r1_tHDR_pre_lib_pos_effects_ci_ymin = X2r1_tHDR_pre_lib_pos_effects - X2r1_tHDR_pre_lib_pos_effects_ci
+X2r1_tHDR_pre_lib_pos_effects_ci_ymax = X2r1_tHDR_pre_lib_pos_effects + X2r1_tHDR_pre_lib_pos_effects_ci
+X2r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X2_posseq, X2r1_tHDR_pre_lib_pos_effects, X2r1_tHDR_pre_lib_pos_effects.x, X2r1_tHDR_pre_lib_pos_effects_ci_ymin, X2r1_tHDR_pre_lib_pos_effects_ci_ymax, X2r1_tHDR_pre_lib_pred_se = X2r1_tHDR_pre_lib_pred$se.fit)
+#X2r2
+X2r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X2r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X2r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X2r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X2r2_tHDR_pre_lib_pred <- predict(X2r2_tHDR_pre_lib_ratio.lo, newdata = X2_posseq, se=TRUE)
+X2r2_tHDR_pre_lib_pos_effects <- X2r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X2r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X2r2_tHDR_pre_lib_pos_effects)
+X2r2_tHDR_pre_lib_pos_effects_ci <- X2r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X2r2_tHDR_pre_lib_pred$df)
+X2r2_tHDR_pre_lib_pos_effects_ci_ymin = X2r2_tHDR_pre_lib_pos_effects - X2r2_tHDR_pre_lib_pos_effects_ci
+X2r2_tHDR_pre_lib_pos_effects_ci_ymax = X2r2_tHDR_pre_lib_pos_effects + X2r2_tHDR_pre_lib_pos_effects_ci
+X2r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X2_posseq, X2r2_tHDR_pre_lib_pos_effects, X2r2_tHDR_pre_lib_pos_effects.x, X2r2_tHDR_pre_lib_pos_effects_ci_ymin, X2r2_tHDR_pre_lib_pos_effects_ci_ymax, X2r2_tHDR_pre_lib_pred_se = X2r2_tHDR_pre_lib_pred$se.fit)
+#X2r1r2
+X2r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X2r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X2r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X2r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X2r1r2_tHDR_pre_lib_pred <- predict(X2r1r2_tHDR_pre_lib_ratio.lo, newdata = X2_posseq, se=TRUE)
+X2r1r2_tHDR_pre_lib_pos_effects <- X2r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X2r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X2r1r2_tHDR_pre_lib_pos_effects)
+X2r1r2_tHDR_pre_lib_pos_effects_ci <- X2r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X2r1r2_tHDR_pre_lib_pred$df)
+X2r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X2r1r2_tHDR_pre_lib_pos_effects - X2r1r2_tHDR_pre_lib_pos_effects_ci
+X2r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X2r1r2_tHDR_pre_lib_pos_effects + X2r1r2_tHDR_pre_lib_pos_effects_ci
+X2r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X2_posseq, X2r1r2_tHDR_pre_lib_pos_effects, X2r1r2_tHDR_pre_lib_pos_effects.x, X2r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X2r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X2r1r2_tHDR_pre_lib_pred_se = X2r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X2r_tHDR_pos_merge_df <- merge(X2r1_prog_map_thresh5_df_r2_int_ord_df, X2r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X2r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X2r_tHDR_pos_merge_df <- merge(X2r_tHDR_pos_merge_df, X2r2_tHDR_pre_lib_pos_effects.df[, c("pos","X2r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X2r_tHDR_pos_merge_df <- merge(X2r_tHDR_pos_merge_df, X2r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X2r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X2r_tHDR_pos_merge_df$X2r1_tHDR_post_lib_loess_r1 <- log2(X2r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1_tHDR_pre_lib_pos_effects.x
+X2r_tHDR_pos_merge_df$X2r1_tHDR_post_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+X2r_tHDR_pos_merge_df$X2r2_tHDR_post_lib_loess_r2 <- log2(X2r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r2_tHDR_pre_lib_pos_effects.x
+X2r_tHDR_pos_merge_df$X2r2_tHDR_post_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+X2r_tHDR_pos_merge_df$X2r1r2_tHDR_post_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X2r_tHDR_pos_merge_df$X2r1_tHDR_pre_lib_loess_r1 <- log2(X2r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1_tHDR_pre_lib_pos_effects.x
+X2r_tHDR_pos_merge_df$X2r1_tHDR_pre_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+X2r_tHDR_pos_merge_df$X2r2_tHDR_pre_lib_loess_r2 <- log2(X2r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r2_tHDR_pre_lib_pos_effects.x
+X2r_tHDR_pos_merge_df$X2r2_tHDR_pre_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X2r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X2r_tHDR_pos_merge_df$X2r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X2r_tHDR_post_lib_loess_median_syn_r1 <- median(X2r_tHDR_pos_merge_df[which(X2r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X2r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X2r_tHDR_post_lib_loess_median_syn_r2 <- median(X2r_tHDR_pos_merge_df[which(X2r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X2r2_tHDR_post_lib_loess_r2')])
+#defines A
+X2r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X2r_tHDR_post_lib_loess_median_syn_r1,X2r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X2r_tHDR_post_lib_loess_median_ns_r1 <- median(X2r_tHDR_pos_merge_df[which(X2r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X2r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X2r_tHDR_post_lib_loess_median_ns_r2 <- median(X2r_tHDR_pos_merge_df[which(X2r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X2r2_tHDR_post_lib_loess_r2')])
+#defines C
+X2r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X2r_tHDR_post_lib_loess_median_ns_r1,X2r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X2r_tHDR_pos_merge_df$X2r1_tHDR_post_lib_loess_r1_e.sns <- (X2r_tHDR_pos_merge_df$X2r1_tHDR_post_lib_loess_r1/(X2r_tHDR_post_lib_loess_median_syn_r1-X2r_tHDR_post_lib_loess_median_ns_r1))*(X2r_tHDR_post_lib_loess_median_syn_r1r2-X2r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X2r_tHDR_pos_merge_df$X2r2_tHDR_post_lib_loess_r2_e.sns <- (X2r_tHDR_pos_merge_df$X2r2_tHDR_post_lib_loess_r2/(X2r_tHDR_post_lib_loess_median_syn_r2-X2r_tHDR_post_lib_loess_median_ns_r2))*(X2r_tHDR_post_lib_loess_median_syn_r1r2-X2r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X2r_tHDR_pos_merge_df$X2r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X2r_tHDR_pos_merge_df$X2r1_tHDR_post_lib_loess_r1_e.sns+X2r_tHDR_pos_merge_df$X2r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X2r_tHDR_pos_merge_df)[names(X2r_tHDR_pos_merge_df) == "X2r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X2r_tHDR_pos_merge_df$exon = 'X2'
+X2r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X3r --
+#X3r1
+X3_posrange <- range(as.numeric(as.character(X3r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X3_posseq <- seq(from=X3_posrange[1], to=X3_posrange[2])
+X3r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X3r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X3r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X3r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X3r1_tHDR_pre_lib_pred <- predict(X3r1_tHDR_pre_lib_ratio.lo, newdata = X3_posseq, se=TRUE)
+X3r1_tHDR_pre_lib_pos_effects <- X3r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X3r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X3r1_tHDR_pre_lib_pos_effects)
+X3r1_tHDR_pre_lib_pos_effects_ci <- X3r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X3r1_tHDR_pre_lib_pred$df)
+X3r1_tHDR_pre_lib_pos_effects_ci_ymin = X3r1_tHDR_pre_lib_pos_effects - X3r1_tHDR_pre_lib_pos_effects_ci
+X3r1_tHDR_pre_lib_pos_effects_ci_ymax = X3r1_tHDR_pre_lib_pos_effects + X3r1_tHDR_pre_lib_pos_effects_ci
+X3r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X3_posseq, X3r1_tHDR_pre_lib_pos_effects, X3r1_tHDR_pre_lib_pos_effects.x, X3r1_tHDR_pre_lib_pos_effects_ci_ymin, X3r1_tHDR_pre_lib_pos_effects_ci_ymax, X3r1_tHDR_pre_lib_pred_se = X3r1_tHDR_pre_lib_pred$se.fit)
+#X3r2
+X3r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X3r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X3r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X3r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X3r2_tHDR_pre_lib_pred <- predict(X3r2_tHDR_pre_lib_ratio.lo, newdata = X3_posseq, se=TRUE)
+X3r2_tHDR_pre_lib_pos_effects <- X3r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X3r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X3r2_tHDR_pre_lib_pos_effects)
+X3r2_tHDR_pre_lib_pos_effects_ci <- X3r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X3r2_tHDR_pre_lib_pred$df)
+X3r2_tHDR_pre_lib_pos_effects_ci_ymin = X3r2_tHDR_pre_lib_pos_effects - X3r2_tHDR_pre_lib_pos_effects_ci
+X3r2_tHDR_pre_lib_pos_effects_ci_ymax = X3r2_tHDR_pre_lib_pos_effects + X3r2_tHDR_pre_lib_pos_effects_ci
+X3r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X3_posseq, X3r2_tHDR_pre_lib_pos_effects, X3r2_tHDR_pre_lib_pos_effects.x, X3r2_tHDR_pre_lib_pos_effects_ci_ymin, X3r2_tHDR_pre_lib_pos_effects_ci_ymax, X3r2_tHDR_pre_lib_pred_se = X3r2_tHDR_pre_lib_pred$se.fit)
+#X3r1r2
+X3r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X3r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X3r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X3r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X3r1r2_tHDR_pre_lib_pred <- predict(X3r1r2_tHDR_pre_lib_ratio.lo, newdata = X3_posseq, se=TRUE)
+X3r1r2_tHDR_pre_lib_pos_effects <- X3r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X3r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X3r1r2_tHDR_pre_lib_pos_effects)
+X3r1r2_tHDR_pre_lib_pos_effects_ci <- X3r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X3r1r2_tHDR_pre_lib_pred$df)
+X3r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X3r1r2_tHDR_pre_lib_pos_effects - X3r1r2_tHDR_pre_lib_pos_effects_ci
+X3r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X3r1r2_tHDR_pre_lib_pos_effects + X3r1r2_tHDR_pre_lib_pos_effects_ci
+X3r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X3_posseq, X3r1r2_tHDR_pre_lib_pos_effects, X3r1r2_tHDR_pre_lib_pos_effects.x, X3r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X3r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X3r1r2_tHDR_pre_lib_pred_se = X3r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X3r_tHDR_pos_merge_df <- merge(X3r1_prog_map_thresh5_df_r2_int_ord_df, X3r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X3r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X3r_tHDR_pos_merge_df <- merge(X3r_tHDR_pos_merge_df, X3r2_tHDR_pre_lib_pos_effects.df[, c("pos","X3r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X3r_tHDR_pos_merge_df <- merge(X3r_tHDR_pos_merge_df, X3r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X3r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X3r_tHDR_pos_merge_df$X3r1_tHDR_post_lib_loess_r1 <- log2(X3r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1_tHDR_pre_lib_pos_effects.x
+X3r_tHDR_pos_merge_df$X3r1_tHDR_post_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+X3r_tHDR_pos_merge_df$X3r2_tHDR_post_lib_loess_r2 <- log2(X3r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r2_tHDR_pre_lib_pos_effects.x
+X3r_tHDR_pos_merge_df$X3r2_tHDR_post_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+X3r_tHDR_pos_merge_df$X3r1r2_tHDR_post_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X3r_tHDR_pos_merge_df$X3r1_tHDR_pre_lib_loess_r1 <- log2(X3r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1_tHDR_pre_lib_pos_effects.x
+X3r_tHDR_pos_merge_df$X3r1_tHDR_pre_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+X3r_tHDR_pos_merge_df$X3r2_tHDR_pre_lib_loess_r2 <- log2(X3r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r2_tHDR_pre_lib_pos_effects.x
+X3r_tHDR_pos_merge_df$X3r2_tHDR_pre_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X3r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X3r_tHDR_pos_merge_df$X3r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X3r_tHDR_post_lib_loess_median_syn_r1 <- median(X3r_tHDR_pos_merge_df[which(X3r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X3r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X3r_tHDR_post_lib_loess_median_syn_r2 <- median(X3r_tHDR_pos_merge_df[which(X3r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X3r2_tHDR_post_lib_loess_r2')])
+#defines A
+X3r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X3r_tHDR_post_lib_loess_median_syn_r1,X3r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X3r_tHDR_post_lib_loess_median_ns_r1 <- median(X3r_tHDR_pos_merge_df[which(X3r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X3r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X3r_tHDR_post_lib_loess_median_ns_r2 <- median(X3r_tHDR_pos_merge_df[which(X3r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X3r2_tHDR_post_lib_loess_r2')])
+#defines C
+X3r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X3r_tHDR_post_lib_loess_median_ns_r1,X3r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X3r_tHDR_pos_merge_df$X3r1_tHDR_post_lib_loess_r1_e.sns <- (X3r_tHDR_pos_merge_df$X3r1_tHDR_post_lib_loess_r1/(X3r_tHDR_post_lib_loess_median_syn_r1-X3r_tHDR_post_lib_loess_median_ns_r1))*(X3r_tHDR_post_lib_loess_median_syn_r1r2-X3r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X3r_tHDR_pos_merge_df$X3r2_tHDR_post_lib_loess_r2_e.sns <- (X3r_tHDR_pos_merge_df$X3r2_tHDR_post_lib_loess_r2/(X3r_tHDR_post_lib_loess_median_syn_r2-X3r_tHDR_post_lib_loess_median_ns_r2))*(X3r_tHDR_post_lib_loess_median_syn_r1r2-X3r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X3r_tHDR_pos_merge_df$X3r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X3r_tHDR_pos_merge_df$X3r1_tHDR_post_lib_loess_r1_e.sns+X3r_tHDR_pos_merge_df$X3r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X3r_tHDR_pos_merge_df)[names(X3r_tHDR_pos_merge_df) == "X3r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X3r_tHDR_pos_merge_df$exon = 'X3'
+X3r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X4r --
+#X4r1
+X4_posrange <- range(as.numeric(as.character(X4r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X4_posseq <- seq(from=X4_posrange[1], to=X4_posrange[2])
+X4r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X4r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X4r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X4r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X4r1_tHDR_pre_lib_pred <- predict(X4r1_tHDR_pre_lib_ratio.lo, newdata = X4_posseq, se=TRUE)
+X4r1_tHDR_pre_lib_pos_effects <- X4r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X4r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X4r1_tHDR_pre_lib_pos_effects)
+X4r1_tHDR_pre_lib_pos_effects_ci <- X4r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X4r1_tHDR_pre_lib_pred$df)
+X4r1_tHDR_pre_lib_pos_effects_ci_ymin = X4r1_tHDR_pre_lib_pos_effects - X4r1_tHDR_pre_lib_pos_effects_ci
+X4r1_tHDR_pre_lib_pos_effects_ci_ymax = X4r1_tHDR_pre_lib_pos_effects + X4r1_tHDR_pre_lib_pos_effects_ci
+X4r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X4_posseq, X4r1_tHDR_pre_lib_pos_effects, X4r1_tHDR_pre_lib_pos_effects.x, X4r1_tHDR_pre_lib_pos_effects_ci_ymin, X4r1_tHDR_pre_lib_pos_effects_ci_ymax, X4r1_tHDR_pre_lib_pred_se = X4r1_tHDR_pre_lib_pred$se.fit)
+#X4r2
+X4r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X4r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X4r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X4r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X4r2_tHDR_pre_lib_pred <- predict(X4r2_tHDR_pre_lib_ratio.lo, newdata = X4_posseq, se=TRUE)
+X4r2_tHDR_pre_lib_pos_effects <- X4r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X4r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X4r2_tHDR_pre_lib_pos_effects)
+X4r2_tHDR_pre_lib_pos_effects_ci <- X4r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X4r2_tHDR_pre_lib_pred$df)
+X4r2_tHDR_pre_lib_pos_effects_ci_ymin = X4r2_tHDR_pre_lib_pos_effects - X4r2_tHDR_pre_lib_pos_effects_ci
+X4r2_tHDR_pre_lib_pos_effects_ci_ymax = X4r2_tHDR_pre_lib_pos_effects + X4r2_tHDR_pre_lib_pos_effects_ci
+X4r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X4_posseq, X4r2_tHDR_pre_lib_pos_effects, X4r2_tHDR_pre_lib_pos_effects.x, X4r2_tHDR_pre_lib_pos_effects_ci_ymin, X4r2_tHDR_pre_lib_pos_effects_ci_ymax, X4r2_tHDR_pre_lib_pred_se = X4r2_tHDR_pre_lib_pred$se.fit)
+#X4r1r2
+X4r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X4r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X4r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X4r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X4r1r2_tHDR_pre_lib_pred <- predict(X4r1r2_tHDR_pre_lib_ratio.lo, newdata = X4_posseq, se=TRUE)
+X4r1r2_tHDR_pre_lib_pos_effects <- X4r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X4r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X4r1r2_tHDR_pre_lib_pos_effects)
+X4r1r2_tHDR_pre_lib_pos_effects_ci <- X4r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X4r1r2_tHDR_pre_lib_pred$df)
+X4r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X4r1r2_tHDR_pre_lib_pos_effects - X4r1r2_tHDR_pre_lib_pos_effects_ci
+X4r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X4r1r2_tHDR_pre_lib_pos_effects + X4r1r2_tHDR_pre_lib_pos_effects_ci
+X4r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X4_posseq, X4r1r2_tHDR_pre_lib_pos_effects, X4r1r2_tHDR_pre_lib_pos_effects.x, X4r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X4r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X4r1r2_tHDR_pre_lib_pred_se = X4r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X4r_tHDR_pos_merge_df <- merge(X4r1_prog_map_thresh5_df_r2_int_ord_df, X4r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X4r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X4r_tHDR_pos_merge_df <- merge(X4r_tHDR_pos_merge_df, X4r2_tHDR_pre_lib_pos_effects.df[, c("pos","X4r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X4r_tHDR_pos_merge_df <- merge(X4r_tHDR_pos_merge_df, X4r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X4r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X4r_tHDR_pos_merge_df$X4r1_tHDR_post_lib_loess_r1 <- log2(X4r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1_tHDR_pre_lib_pos_effects.x
+X4r_tHDR_pos_merge_df$X4r1_tHDR_post_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+X4r_tHDR_pos_merge_df$X4r2_tHDR_post_lib_loess_r2 <- log2(X4r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r2_tHDR_pre_lib_pos_effects.x
+X4r_tHDR_pos_merge_df$X4r2_tHDR_post_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+X4r_tHDR_pos_merge_df$X4r1r2_tHDR_post_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X4r_tHDR_pos_merge_df$X4r1_tHDR_pre_lib_loess_r1 <- log2(X4r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1_tHDR_pre_lib_pos_effects.x
+X4r_tHDR_pos_merge_df$X4r1_tHDR_pre_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+X4r_tHDR_pos_merge_df$X4r2_tHDR_pre_lib_loess_r2 <- log2(X4r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r2_tHDR_pre_lib_pos_effects.x
+X4r_tHDR_pos_merge_df$X4r2_tHDR_pre_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X4r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X4r_tHDR_pos_merge_df$X4r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X4r_tHDR_post_lib_loess_median_syn_r1 <- median(X4r_tHDR_pos_merge_df[which(X4r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X4r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X4r_tHDR_post_lib_loess_median_syn_r2 <- median(X4r_tHDR_pos_merge_df[which(X4r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X4r2_tHDR_post_lib_loess_r2')])
+#defines A
+X4r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X4r_tHDR_post_lib_loess_median_syn_r1,X4r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X4r_tHDR_post_lib_loess_median_ns_r1 <- median(X4r_tHDR_pos_merge_df[which(X4r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X4r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X4r_tHDR_post_lib_loess_median_ns_r2 <- median(X4r_tHDR_pos_merge_df[which(X4r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X4r2_tHDR_post_lib_loess_r2')])
+#defines C
+X4r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X4r_tHDR_post_lib_loess_median_ns_r1,X4r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X4r_tHDR_pos_merge_df$X4r1_tHDR_post_lib_loess_r1_e.sns <- (X4r_tHDR_pos_merge_df$X4r1_tHDR_post_lib_loess_r1/(X4r_tHDR_post_lib_loess_median_syn_r1-X4r_tHDR_post_lib_loess_median_ns_r1))*(X4r_tHDR_post_lib_loess_median_syn_r1r2-X4r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X4r_tHDR_pos_merge_df$X4r2_tHDR_post_lib_loess_r2_e.sns <- (X4r_tHDR_pos_merge_df$X4r2_tHDR_post_lib_loess_r2/(X4r_tHDR_post_lib_loess_median_syn_r2-X4r_tHDR_post_lib_loess_median_ns_r2))*(X4r_tHDR_post_lib_loess_median_syn_r1r2-X4r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X4r_tHDR_pos_merge_df$X4r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X4r_tHDR_pos_merge_df$X4r1_tHDR_post_lib_loess_r1_e.sns+X4r_tHDR_pos_merge_df$X4r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X4r_tHDR_pos_merge_df)[names(X4r_tHDR_pos_merge_df) == "X4r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X4r_tHDR_pos_merge_df$exon = 'X4'
+X4r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X5r --
+#X5r1
+X5_posrange <- range(as.numeric(as.character(X5r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X5_posseq <- seq(from=X5_posrange[1], to=X5_posrange[2])
+X5r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X5r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X5r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X5r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X5r1_tHDR_pre_lib_pred <- predict(X5r1_tHDR_pre_lib_ratio.lo, newdata = X5_posseq, se=TRUE)
+X5r1_tHDR_pre_lib_pos_effects <- X5r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X5r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X5r1_tHDR_pre_lib_pos_effects)
+X5r1_tHDR_pre_lib_pos_effects_ci <- X5r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X5r1_tHDR_pre_lib_pred$df)
+X5r1_tHDR_pre_lib_pos_effects_ci_ymin = X5r1_tHDR_pre_lib_pos_effects - X5r1_tHDR_pre_lib_pos_effects_ci
+X5r1_tHDR_pre_lib_pos_effects_ci_ymax = X5r1_tHDR_pre_lib_pos_effects + X5r1_tHDR_pre_lib_pos_effects_ci
+X5r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X5_posseq, X5r1_tHDR_pre_lib_pos_effects, X5r1_tHDR_pre_lib_pos_effects.x, X5r1_tHDR_pre_lib_pos_effects_ci_ymin, X5r1_tHDR_pre_lib_pos_effects_ci_ymax, X5r1_tHDR_pre_lib_pred_se = X5r1_tHDR_pre_lib_pred$se.fit)
+#X5r2
+X5r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X5r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X5r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X5r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X5r2_tHDR_pre_lib_pred <- predict(X5r2_tHDR_pre_lib_ratio.lo, newdata = X5_posseq, se=TRUE)
+X5r2_tHDR_pre_lib_pos_effects <- X5r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X5r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X5r2_tHDR_pre_lib_pos_effects)
+X5r2_tHDR_pre_lib_pos_effects_ci <- X5r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X5r2_tHDR_pre_lib_pred$df)
+X5r2_tHDR_pre_lib_pos_effects_ci_ymin = X5r2_tHDR_pre_lib_pos_effects - X5r2_tHDR_pre_lib_pos_effects_ci
+X5r2_tHDR_pre_lib_pos_effects_ci_ymax = X5r2_tHDR_pre_lib_pos_effects + X5r2_tHDR_pre_lib_pos_effects_ci
+X5r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X5_posseq, X5r2_tHDR_pre_lib_pos_effects, X5r2_tHDR_pre_lib_pos_effects.x, X5r2_tHDR_pre_lib_pos_effects_ci_ymin, X5r2_tHDR_pre_lib_pos_effects_ci_ymax, X5r2_tHDR_pre_lib_pred_se = X5r2_tHDR_pre_lib_pred$se.fit)
+#X5r1r2
+X5r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X5r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X5r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X5r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X5r1r2_tHDR_pre_lib_pred <- predict(X5r1r2_tHDR_pre_lib_ratio.lo, newdata = X5_posseq, se=TRUE)
+X5r1r2_tHDR_pre_lib_pos_effects <- X5r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X5r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X5r1r2_tHDR_pre_lib_pos_effects)
+X5r1r2_tHDR_pre_lib_pos_effects_ci <- X5r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X5r1r2_tHDR_pre_lib_pred$df)
+X5r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X5r1r2_tHDR_pre_lib_pos_effects - X5r1r2_tHDR_pre_lib_pos_effects_ci
+X5r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X5r1r2_tHDR_pre_lib_pos_effects + X5r1r2_tHDR_pre_lib_pos_effects_ci
+X5r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X5_posseq, X5r1r2_tHDR_pre_lib_pos_effects, X5r1r2_tHDR_pre_lib_pos_effects.x, X5r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X5r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X5r1r2_tHDR_pre_lib_pred_se = X5r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X5r_tHDR_pos_merge_df <- merge(X5r1_prog_map_thresh5_df_r2_int_ord_df, X5r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X5r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X5r_tHDR_pos_merge_df <- merge(X5r_tHDR_pos_merge_df, X5r2_tHDR_pre_lib_pos_effects.df[, c("pos","X5r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X5r_tHDR_pos_merge_df <- merge(X5r_tHDR_pos_merge_df, X5r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X5r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X5r_tHDR_pos_merge_df$X5r1_tHDR_post_lib_loess_r1 <- log2(X5r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1_tHDR_pre_lib_pos_effects.x
+X5r_tHDR_pos_merge_df$X5r1_tHDR_post_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+X5r_tHDR_pos_merge_df$X5r2_tHDR_post_lib_loess_r2 <- log2(X5r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r2_tHDR_pre_lib_pos_effects.x
+X5r_tHDR_pos_merge_df$X5r2_tHDR_post_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+X5r_tHDR_pos_merge_df$X5r1r2_tHDR_post_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X5r_tHDR_pos_merge_df$X5r1_tHDR_pre_lib_loess_r1 <- log2(X5r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1_tHDR_pre_lib_pos_effects.x
+X5r_tHDR_pos_merge_df$X5r1_tHDR_pre_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+X5r_tHDR_pos_merge_df$X5r2_tHDR_pre_lib_loess_r2 <- log2(X5r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r2_tHDR_pre_lib_pos_effects.x
+X5r_tHDR_pos_merge_df$X5r2_tHDR_pre_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X5r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X5r_tHDR_pos_merge_df$X5r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X5r_tHDR_post_lib_loess_median_syn_r1 <- median(X5r_tHDR_pos_merge_df[which(X5r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X5r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X5r_tHDR_post_lib_loess_median_syn_r2 <- median(X5r_tHDR_pos_merge_df[which(X5r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X5r2_tHDR_post_lib_loess_r2')])
+#defines A
+X5r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X5r_tHDR_post_lib_loess_median_syn_r1,X5r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X5r_tHDR_post_lib_loess_median_ns_r1 <- median(X5r_tHDR_pos_merge_df[which(X5r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X5r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X5r_tHDR_post_lib_loess_median_ns_r2 <- median(X5r_tHDR_pos_merge_df[which(X5r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X5r2_tHDR_post_lib_loess_r2')])
+#defines C
+X5r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X5r_tHDR_post_lib_loess_median_ns_r1,X5r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X5r_tHDR_pos_merge_df$X5r1_tHDR_post_lib_loess_r1_e.sns <- (X5r_tHDR_pos_merge_df$X5r1_tHDR_post_lib_loess_r1/(X5r_tHDR_post_lib_loess_median_syn_r1-X5r_tHDR_post_lib_loess_median_ns_r1))*(X5r_tHDR_post_lib_loess_median_syn_r1r2-X5r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X5r_tHDR_pos_merge_df$X5r2_tHDR_post_lib_loess_r2_e.sns <- (X5r_tHDR_pos_merge_df$X5r2_tHDR_post_lib_loess_r2/(X5r_tHDR_post_lib_loess_median_syn_r2-X5r_tHDR_post_lib_loess_median_ns_r2))*(X5r_tHDR_post_lib_loess_median_syn_r1r2-X5r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X5r_tHDR_pos_merge_df$X5r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X5r_tHDR_pos_merge_df$X5r1_tHDR_post_lib_loess_r1_e.sns+X5r_tHDR_pos_merge_df$X5r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X5r_tHDR_pos_merge_df)[names(X5r_tHDR_pos_merge_df) == "X5r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X5r_tHDR_pos_merge_df$exon = 'X5'
+X5r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X15r --
+#X15r1
+X15_posrange <- range(as.numeric(as.character(X15r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X15_posseq <- seq(from=X15_posrange[1], to=X15_posrange[2])
+X15r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X15r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X15r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X15r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X15r1_tHDR_pre_lib_pred <- predict(X15r1_tHDR_pre_lib_ratio.lo, newdata = X15_posseq, se=TRUE)
+X15r1_tHDR_pre_lib_pos_effects <- X15r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X15r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X15r1_tHDR_pre_lib_pos_effects)
+X15r1_tHDR_pre_lib_pos_effects_ci <- X15r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X15r1_tHDR_pre_lib_pred$df)
+X15r1_tHDR_pre_lib_pos_effects_ci_ymin = X15r1_tHDR_pre_lib_pos_effects - X15r1_tHDR_pre_lib_pos_effects_ci
+X15r1_tHDR_pre_lib_pos_effects_ci_ymax = X15r1_tHDR_pre_lib_pos_effects + X15r1_tHDR_pre_lib_pos_effects_ci
+X15r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X15_posseq, X15r1_tHDR_pre_lib_pos_effects, X15r1_tHDR_pre_lib_pos_effects.x, X15r1_tHDR_pre_lib_pos_effects_ci_ymin, X15r1_tHDR_pre_lib_pos_effects_ci_ymax, X15r1_tHDR_pre_lib_pred_se = X15r1_tHDR_pre_lib_pred$se.fit)
+#X15r2
+X15r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X15r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X15r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X15r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X15r2_tHDR_pre_lib_pred <- predict(X15r2_tHDR_pre_lib_ratio.lo, newdata = X15_posseq, se=TRUE)
+X15r2_tHDR_pre_lib_pos_effects <- X15r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X15r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X15r2_tHDR_pre_lib_pos_effects)
+X15r2_tHDR_pre_lib_pos_effects_ci <- X15r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X15r2_tHDR_pre_lib_pred$df)
+X15r2_tHDR_pre_lib_pos_effects_ci_ymin = X15r2_tHDR_pre_lib_pos_effects - X15r2_tHDR_pre_lib_pos_effects_ci
+X15r2_tHDR_pre_lib_pos_effects_ci_ymax = X15r2_tHDR_pre_lib_pos_effects + X15r2_tHDR_pre_lib_pos_effects_ci
+X15r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X15_posseq, X15r2_tHDR_pre_lib_pos_effects, X15r2_tHDR_pre_lib_pos_effects.x, X15r2_tHDR_pre_lib_pos_effects_ci_ymin, X15r2_tHDR_pre_lib_pos_effects_ci_ymax, X15r2_tHDR_pre_lib_pred_se = X15r2_tHDR_pre_lib_pred$se.fit)
+#X15r1r2
+X15r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X15r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X15r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X15r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X15r1r2_tHDR_pre_lib_pred <- predict(X15r1r2_tHDR_pre_lib_ratio.lo, newdata = X15_posseq, se=TRUE)
+X15r1r2_tHDR_pre_lib_pos_effects <- X15r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X15r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X15r1r2_tHDR_pre_lib_pos_effects)
+X15r1r2_tHDR_pre_lib_pos_effects_ci <- X15r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X15r1r2_tHDR_pre_lib_pred$df)
+X15r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X15r1r2_tHDR_pre_lib_pos_effects - X15r1r2_tHDR_pre_lib_pos_effects_ci
+X15r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X15r1r2_tHDR_pre_lib_pos_effects + X15r1r2_tHDR_pre_lib_pos_effects_ci
+X15r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X15_posseq, X15r1r2_tHDR_pre_lib_pos_effects, X15r1r2_tHDR_pre_lib_pos_effects.x, X15r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X15r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X15r1r2_tHDR_pre_lib_pred_se = X15r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X15r_tHDR_pos_merge_df <- merge(X15r1_prog_map_thresh5_df_r2_int_ord_df, X15r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X15r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X15r_tHDR_pos_merge_df <- merge(X15r_tHDR_pos_merge_df, X15r2_tHDR_pre_lib_pos_effects.df[, c("pos","X15r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X15r_tHDR_pos_merge_df <- merge(X15r_tHDR_pos_merge_df, X15r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X15r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X15r_tHDR_pos_merge_df$X15r1_tHDR_post_lib_loess_r1 <- log2(X15r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1_tHDR_pre_lib_pos_effects.x
+X15r_tHDR_pos_merge_df$X15r1_tHDR_post_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+X15r_tHDR_pos_merge_df$X15r2_tHDR_post_lib_loess_r2 <- log2(X15r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r2_tHDR_pre_lib_pos_effects.x
+X15r_tHDR_pos_merge_df$X15r2_tHDR_post_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+X15r_tHDR_pos_merge_df$X15r1r2_tHDR_post_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X15r_tHDR_pos_merge_df$X15r1_tHDR_pre_lib_loess_r1 <- log2(X15r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1_tHDR_pre_lib_pos_effects.x
+X15r_tHDR_pos_merge_df$X15r1_tHDR_pre_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+X15r_tHDR_pos_merge_df$X15r2_tHDR_pre_lib_loess_r2 <- log2(X15r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r2_tHDR_pre_lib_pos_effects.x
+X15r_tHDR_pos_merge_df$X15r2_tHDR_pre_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X15r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X15r_tHDR_pos_merge_df$X15r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X15r_tHDR_post_lib_loess_median_syn_r1 <- median(X15r_tHDR_pos_merge_df[which(X15r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X15r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X15r_tHDR_post_lib_loess_median_syn_r2 <- median(X15r_tHDR_pos_merge_df[which(X15r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X15r2_tHDR_post_lib_loess_r2')])
+#defines A
+X15r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X15r_tHDR_post_lib_loess_median_syn_r1,X15r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X15r_tHDR_post_lib_loess_median_ns_r1 <- median(X15r_tHDR_pos_merge_df[which(X15r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X15r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X15r_tHDR_post_lib_loess_median_ns_r2 <- median(X15r_tHDR_pos_merge_df[which(X15r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X15r2_tHDR_post_lib_loess_r2')])
+#defines C
+X15r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X15r_tHDR_post_lib_loess_median_ns_r1,X15r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X15r_tHDR_pos_merge_df$X15r1_tHDR_post_lib_loess_r1_e.sns <- (X15r_tHDR_pos_merge_df$X15r1_tHDR_post_lib_loess_r1/(X15r_tHDR_post_lib_loess_median_syn_r1-X15r_tHDR_post_lib_loess_median_ns_r1))*(X15r_tHDR_post_lib_loess_median_syn_r1r2-X15r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X15r_tHDR_pos_merge_df$X15r2_tHDR_post_lib_loess_r2_e.sns <- (X15r_tHDR_pos_merge_df$X15r2_tHDR_post_lib_loess_r2/(X15r_tHDR_post_lib_loess_median_syn_r2-X15r_tHDR_post_lib_loess_median_ns_r2))*(X15r_tHDR_post_lib_loess_median_syn_r1r2-X15r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X15r_tHDR_pos_merge_df$X15r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X15r_tHDR_pos_merge_df$X15r1_tHDR_post_lib_loess_r1_e.sns+X15r_tHDR_pos_merge_df$X15r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X15r_tHDR_pos_merge_df)[names(X15r_tHDR_pos_merge_df) == "X15r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X15r_tHDR_pos_merge_df$exon = 'X15'
+X15r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X16r --
+#X16r1
+X16_posrange <- range(as.numeric(as.character(X16r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X16_posseq <- seq(from=X16_posrange[1], to=X16_posrange[2])
+X16r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X16r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X16r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X16r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X16r1_tHDR_pre_lib_pred <- predict(X16r1_tHDR_pre_lib_ratio.lo, newdata = X16_posseq, se=TRUE)
+X16r1_tHDR_pre_lib_pos_effects <- X16r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X16r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X16r1_tHDR_pre_lib_pos_effects)
+X16r1_tHDR_pre_lib_pos_effects_ci <- X16r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X16r1_tHDR_pre_lib_pred$df)
+X16r1_tHDR_pre_lib_pos_effects_ci_ymin = X16r1_tHDR_pre_lib_pos_effects - X16r1_tHDR_pre_lib_pos_effects_ci
+X16r1_tHDR_pre_lib_pos_effects_ci_ymax = X16r1_tHDR_pre_lib_pos_effects + X16r1_tHDR_pre_lib_pos_effects_ci
+X16r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X16_posseq, X16r1_tHDR_pre_lib_pos_effects, X16r1_tHDR_pre_lib_pos_effects.x, X16r1_tHDR_pre_lib_pos_effects_ci_ymin, X16r1_tHDR_pre_lib_pos_effects_ci_ymax, X16r1_tHDR_pre_lib_pred_se = X16r1_tHDR_pre_lib_pred$se.fit)
+#X16r2
+X16r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X16r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X16r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X16r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X16r2_tHDR_pre_lib_pred <- predict(X16r2_tHDR_pre_lib_ratio.lo, newdata = X16_posseq, se=TRUE)
+X16r2_tHDR_pre_lib_pos_effects <- X16r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X16r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X16r2_tHDR_pre_lib_pos_effects)
+X16r2_tHDR_pre_lib_pos_effects_ci <- X16r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X16r2_tHDR_pre_lib_pred$df)
+X16r2_tHDR_pre_lib_pos_effects_ci_ymin = X16r2_tHDR_pre_lib_pos_effects - X16r2_tHDR_pre_lib_pos_effects_ci
+X16r2_tHDR_pre_lib_pos_effects_ci_ymax = X16r2_tHDR_pre_lib_pos_effects + X16r2_tHDR_pre_lib_pos_effects_ci
+X16r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X16_posseq, X16r2_tHDR_pre_lib_pos_effects, X16r2_tHDR_pre_lib_pos_effects.x, X16r2_tHDR_pre_lib_pos_effects_ci_ymin, X16r2_tHDR_pre_lib_pos_effects_ci_ymax, X16r2_tHDR_pre_lib_pred_se = X16r2_tHDR_pre_lib_pred$se.fit)
+#X16r1r2
+X16r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X16r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X16r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X16r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X16r1r2_tHDR_pre_lib_pred <- predict(X16r1r2_tHDR_pre_lib_ratio.lo, newdata = X16_posseq, se=TRUE)
+X16r1r2_tHDR_pre_lib_pos_effects <- X16r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X16r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X16r1r2_tHDR_pre_lib_pos_effects)
+X16r1r2_tHDR_pre_lib_pos_effects_ci <- X16r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X16r1r2_tHDR_pre_lib_pred$df)
+X16r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X16r1r2_tHDR_pre_lib_pos_effects - X16r1r2_tHDR_pre_lib_pos_effects_ci
+X16r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X16r1r2_tHDR_pre_lib_pos_effects + X16r1r2_tHDR_pre_lib_pos_effects_ci
+X16r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X16_posseq, X16r1r2_tHDR_pre_lib_pos_effects, X16r1r2_tHDR_pre_lib_pos_effects.x, X16r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X16r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X16r1r2_tHDR_pre_lib_pred_se = X16r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X16r_tHDR_pos_merge_df <- merge(X16r1_prog_map_thresh5_df_r2_int_ord_df, X16r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X16r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X16r_tHDR_pos_merge_df <- merge(X16r_tHDR_pos_merge_df, X16r2_tHDR_pre_lib_pos_effects.df[, c("pos","X16r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X16r_tHDR_pos_merge_df <- merge(X16r_tHDR_pos_merge_df, X16r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X16r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X16r_tHDR_pos_merge_df$X16r1_tHDR_post_lib_loess_r1 <- log2(X16r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1_tHDR_pre_lib_pos_effects.x
+X16r_tHDR_pos_merge_df$X16r1_tHDR_post_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+X16r_tHDR_pos_merge_df$X16r2_tHDR_post_lib_loess_r2 <- log2(X16r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r2_tHDR_pre_lib_pos_effects.x
+X16r_tHDR_pos_merge_df$X16r2_tHDR_post_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+X16r_tHDR_pos_merge_df$X16r1r2_tHDR_post_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X16r_tHDR_pos_merge_df$X16r1_tHDR_pre_lib_loess_r1 <- log2(X16r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1_tHDR_pre_lib_pos_effects.x
+X16r_tHDR_pos_merge_df$X16r1_tHDR_pre_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+X16r_tHDR_pos_merge_df$X16r2_tHDR_pre_lib_loess_r2 <- log2(X16r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r2_tHDR_pre_lib_pos_effects.x
+X16r_tHDR_pos_merge_df$X16r2_tHDR_pre_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X16r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X16r_tHDR_pos_merge_df$X16r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X16r_tHDR_post_lib_loess_median_syn_r1 <- median(X16r_tHDR_pos_merge_df[which(X16r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X16r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X16r_tHDR_post_lib_loess_median_syn_r2 <- median(X16r_tHDR_pos_merge_df[which(X16r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X16r2_tHDR_post_lib_loess_r2')])
+#defines A
+X16r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X16r_tHDR_post_lib_loess_median_syn_r1,X16r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X16r_tHDR_post_lib_loess_median_ns_r1 <- median(X16r_tHDR_pos_merge_df[which(X16r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X16r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X16r_tHDR_post_lib_loess_median_ns_r2 <- median(X16r_tHDR_pos_merge_df[which(X16r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X16r2_tHDR_post_lib_loess_r2')])
+#defines C
+X16r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X16r_tHDR_post_lib_loess_median_ns_r1,X16r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X16r_tHDR_pos_merge_df$X16r1_tHDR_post_lib_loess_r1_e.sns <- (X16r_tHDR_pos_merge_df$X16r1_tHDR_post_lib_loess_r1/(X16r_tHDR_post_lib_loess_median_syn_r1-X16r_tHDR_post_lib_loess_median_ns_r1))*(X16r_tHDR_post_lib_loess_median_syn_r1r2-X16r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X16r_tHDR_pos_merge_df$X16r2_tHDR_post_lib_loess_r2_e.sns <- (X16r_tHDR_pos_merge_df$X16r2_tHDR_post_lib_loess_r2/(X16r_tHDR_post_lib_loess_median_syn_r2-X16r_tHDR_post_lib_loess_median_ns_r2))*(X16r_tHDR_post_lib_loess_median_syn_r1r2-X16r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X16r_tHDR_pos_merge_df$X16r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X16r_tHDR_pos_merge_df$X16r1_tHDR_post_lib_loess_r1_e.sns+X16r_tHDR_pos_merge_df$X16r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X16r_tHDR_pos_merge_df)[names(X16r_tHDR_pos_merge_df) == "X16r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X16r_tHDR_pos_merge_df$exon = 'X16'
+X16r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X17r --
+#X17r1
+X17_posrange <- range(as.numeric(as.character(X17r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X17_posseq <- seq(from=X17_posrange[1], to=X17_posrange[2])
+X17r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X17r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X17r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X17r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X17r1_tHDR_pre_lib_pred <- predict(X17r1_tHDR_pre_lib_ratio.lo, newdata = X17_posseq, se=TRUE)
+X17r1_tHDR_pre_lib_pos_effects <- X17r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X17r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X17r1_tHDR_pre_lib_pos_effects)
+X17r1_tHDR_pre_lib_pos_effects_ci <- X17r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X17r1_tHDR_pre_lib_pred$df)
+X17r1_tHDR_pre_lib_pos_effects_ci_ymin = X17r1_tHDR_pre_lib_pos_effects - X17r1_tHDR_pre_lib_pos_effects_ci
+X17r1_tHDR_pre_lib_pos_effects_ci_ymax = X17r1_tHDR_pre_lib_pos_effects + X17r1_tHDR_pre_lib_pos_effects_ci
+X17r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X17_posseq, X17r1_tHDR_pre_lib_pos_effects, X17r1_tHDR_pre_lib_pos_effects.x, X17r1_tHDR_pre_lib_pos_effects_ci_ymin, X17r1_tHDR_pre_lib_pos_effects_ci_ymax, X17r1_tHDR_pre_lib_pred_se = X17r1_tHDR_pre_lib_pred$se.fit)
+#X17r2
+X17r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X17r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X17r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X17r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X17r2_tHDR_pre_lib_pred <- predict(X17r2_tHDR_pre_lib_ratio.lo, newdata = X17_posseq, se=TRUE)
+X17r2_tHDR_pre_lib_pos_effects <- X17r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X17r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X17r2_tHDR_pre_lib_pos_effects)
+X17r2_tHDR_pre_lib_pos_effects_ci <- X17r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X17r2_tHDR_pre_lib_pred$df)
+X17r2_tHDR_pre_lib_pos_effects_ci_ymin = X17r2_tHDR_pre_lib_pos_effects - X17r2_tHDR_pre_lib_pos_effects_ci
+X17r2_tHDR_pre_lib_pos_effects_ci_ymax = X17r2_tHDR_pre_lib_pos_effects + X17r2_tHDR_pre_lib_pos_effects_ci
+X17r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X17_posseq, X17r2_tHDR_pre_lib_pos_effects, X17r2_tHDR_pre_lib_pos_effects.x, X17r2_tHDR_pre_lib_pos_effects_ci_ymin, X17r2_tHDR_pre_lib_pos_effects_ci_ymax, X17r2_tHDR_pre_lib_pred_se = X17r2_tHDR_pre_lib_pred$se.fit)
+#X17r1r2
+X17r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X17r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X17r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X17r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X17r1r2_tHDR_pre_lib_pred <- predict(X17r1r2_tHDR_pre_lib_ratio.lo, newdata = X17_posseq, se=TRUE)
+X17r1r2_tHDR_pre_lib_pos_effects <- X17r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X17r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X17r1r2_tHDR_pre_lib_pos_effects)
+X17r1r2_tHDR_pre_lib_pos_effects_ci <- X17r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X17r1r2_tHDR_pre_lib_pred$df)
+X17r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X17r1r2_tHDR_pre_lib_pos_effects - X17r1r2_tHDR_pre_lib_pos_effects_ci
+X17r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X17r1r2_tHDR_pre_lib_pos_effects + X17r1r2_tHDR_pre_lib_pos_effects_ci
+X17r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X17_posseq, X17r1r2_tHDR_pre_lib_pos_effects, X17r1r2_tHDR_pre_lib_pos_effects.x, X17r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X17r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X17r1r2_tHDR_pre_lib_pred_se = X17r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X17r_tHDR_pos_merge_df <- merge(X17r1_prog_map_thresh5_df_r2_int_ord_df, X17r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X17r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X17r_tHDR_pos_merge_df <- merge(X17r_tHDR_pos_merge_df, X17r2_tHDR_pre_lib_pos_effects.df[, c("pos","X17r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X17r_tHDR_pos_merge_df <- merge(X17r_tHDR_pos_merge_df, X17r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X17r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X17r_tHDR_pos_merge_df$X17r1_tHDR_post_lib_loess_r1 <- log2(X17r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1_tHDR_pre_lib_pos_effects.x
+X17r_tHDR_pos_merge_df$X17r1_tHDR_post_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+X17r_tHDR_pos_merge_df$X17r2_tHDR_post_lib_loess_r2 <- log2(X17r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r2_tHDR_pre_lib_pos_effects.x
+X17r_tHDR_pos_merge_df$X17r2_tHDR_post_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+X17r_tHDR_pos_merge_df$X17r1r2_tHDR_post_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X17r_tHDR_pos_merge_df$X17r1_tHDR_pre_lib_loess_r1 <- log2(X17r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1_tHDR_pre_lib_pos_effects.x
+X17r_tHDR_pos_merge_df$X17r1_tHDR_pre_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+X17r_tHDR_pos_merge_df$X17r2_tHDR_pre_lib_loess_r2 <- log2(X17r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r2_tHDR_pre_lib_pos_effects.x
+X17r_tHDR_pos_merge_df$X17r2_tHDR_pre_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X17r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X17r_tHDR_pos_merge_df$X17r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X17r_tHDR_post_lib_loess_median_syn_r1 <- median(X17r_tHDR_pos_merge_df[which(X17r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X17r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X17r_tHDR_post_lib_loess_median_syn_r2 <- median(X17r_tHDR_pos_merge_df[which(X17r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X17r2_tHDR_post_lib_loess_r2')])
+#defines A
+X17r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X17r_tHDR_post_lib_loess_median_syn_r1,X17r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X17r_tHDR_post_lib_loess_median_ns_r1 <- median(X17r_tHDR_pos_merge_df[which(X17r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X17r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X17r_tHDR_post_lib_loess_median_ns_r2 <- median(X17r_tHDR_pos_merge_df[which(X17r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X17r2_tHDR_post_lib_loess_r2')])
+#defines C
+X17r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X17r_tHDR_post_lib_loess_median_ns_r1,X17r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X17r_tHDR_pos_merge_df$X17r1_tHDR_post_lib_loess_r1_e.sns <- (X17r_tHDR_pos_merge_df$X17r1_tHDR_post_lib_loess_r1/(X17r_tHDR_post_lib_loess_median_syn_r1-X17r_tHDR_post_lib_loess_median_ns_r1))*(X17r_tHDR_post_lib_loess_median_syn_r1r2-X17r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X17r_tHDR_pos_merge_df$X17r2_tHDR_post_lib_loess_r2_e.sns <- (X17r_tHDR_pos_merge_df$X17r2_tHDR_post_lib_loess_r2/(X17r_tHDR_post_lib_loess_median_syn_r2-X17r_tHDR_post_lib_loess_median_ns_r2))*(X17r_tHDR_post_lib_loess_median_syn_r1r2-X17r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X17r_tHDR_pos_merge_df$X17r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X17r_tHDR_pos_merge_df$X17r1_tHDR_post_lib_loess_r1_e.sns+X17r_tHDR_pos_merge_df$X17r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X17r_tHDR_pos_merge_df)[names(X17r_tHDR_pos_merge_df) == "X17r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X17r_tHDR_pos_merge_df$exon = 'X17'
+X17r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X18r --
+#X18r1
+X18_posrange <- range(as.numeric(as.character(X18r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X18_posseq <- seq(from=X18_posrange[1], to=X18_posrange[2])
+X18r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X18r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X18r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X18r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X18r1_tHDR_pre_lib_pred <- predict(X18r1_tHDR_pre_lib_ratio.lo, newdata = X18_posseq, se=TRUE)
+X18r1_tHDR_pre_lib_pos_effects <- X18r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X18r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X18r1_tHDR_pre_lib_pos_effects)
+X18r1_tHDR_pre_lib_pos_effects_ci <- X18r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X18r1_tHDR_pre_lib_pred$df)
+X18r1_tHDR_pre_lib_pos_effects_ci_ymin = X18r1_tHDR_pre_lib_pos_effects - X18r1_tHDR_pre_lib_pos_effects_ci
+X18r1_tHDR_pre_lib_pos_effects_ci_ymax = X18r1_tHDR_pre_lib_pos_effects + X18r1_tHDR_pre_lib_pos_effects_ci
+X18r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X18_posseq, X18r1_tHDR_pre_lib_pos_effects, X18r1_tHDR_pre_lib_pos_effects.x, X18r1_tHDR_pre_lib_pos_effects_ci_ymin, X18r1_tHDR_pre_lib_pos_effects_ci_ymax, X18r1_tHDR_pre_lib_pred_se = X18r1_tHDR_pre_lib_pred$se.fit)
+#X18r2
+X18r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X18r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X18r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X18r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X18r2_tHDR_pre_lib_pred <- predict(X18r2_tHDR_pre_lib_ratio.lo, newdata = X18_posseq, se=TRUE)
+X18r2_tHDR_pre_lib_pos_effects <- X18r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X18r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X18r2_tHDR_pre_lib_pos_effects)
+X18r2_tHDR_pre_lib_pos_effects_ci <- X18r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X18r2_tHDR_pre_lib_pred$df)
+X18r2_tHDR_pre_lib_pos_effects_ci_ymin = X18r2_tHDR_pre_lib_pos_effects - X18r2_tHDR_pre_lib_pos_effects_ci
+X18r2_tHDR_pre_lib_pos_effects_ci_ymax = X18r2_tHDR_pre_lib_pos_effects + X18r2_tHDR_pre_lib_pos_effects_ci
+X18r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X18_posseq, X18r2_tHDR_pre_lib_pos_effects, X18r2_tHDR_pre_lib_pos_effects.x, X18r2_tHDR_pre_lib_pos_effects_ci_ymin, X18r2_tHDR_pre_lib_pos_effects_ci_ymax, X18r2_tHDR_pre_lib_pred_se = X18r2_tHDR_pre_lib_pred$se.fit)
+#X18r1r2
+X18r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X18r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X18r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X18r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X18r1r2_tHDR_pre_lib_pred <- predict(X18r1r2_tHDR_pre_lib_ratio.lo, newdata = X18_posseq, se=TRUE)
+X18r1r2_tHDR_pre_lib_pos_effects <- X18r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X18r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X18r1r2_tHDR_pre_lib_pos_effects)
+X18r1r2_tHDR_pre_lib_pos_effects_ci <- X18r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X18r1r2_tHDR_pre_lib_pred$df)
+X18r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X18r1r2_tHDR_pre_lib_pos_effects - X18r1r2_tHDR_pre_lib_pos_effects_ci
+X18r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X18r1r2_tHDR_pre_lib_pos_effects + X18r1r2_tHDR_pre_lib_pos_effects_ci
+X18r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X18_posseq, X18r1r2_tHDR_pre_lib_pos_effects, X18r1r2_tHDR_pre_lib_pos_effects.x, X18r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X18r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X18r1r2_tHDR_pre_lib_pred_se = X18r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X18r_tHDR_pos_merge_df <- merge(X18r1_prog_map_thresh5_df_r2_int_ord_df, X18r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X18r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X18r_tHDR_pos_merge_df <- merge(X18r_tHDR_pos_merge_df, X18r2_tHDR_pre_lib_pos_effects.df[, c("pos","X18r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X18r_tHDR_pos_merge_df <- merge(X18r_tHDR_pos_merge_df, X18r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X18r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X18r_tHDR_pos_merge_df$X18r1_tHDR_post_lib_loess_r1 <- log2(X18r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1_tHDR_pre_lib_pos_effects.x
+X18r_tHDR_pos_merge_df$X18r1_tHDR_post_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+X18r_tHDR_pos_merge_df$X18r2_tHDR_post_lib_loess_r2 <- log2(X18r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r2_tHDR_pre_lib_pos_effects.x
+X18r_tHDR_pos_merge_df$X18r2_tHDR_post_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+X18r_tHDR_pos_merge_df$X18r1r2_tHDR_post_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X18r_tHDR_pos_merge_df$X18r1_tHDR_pre_lib_loess_r1 <- log2(X18r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1_tHDR_pre_lib_pos_effects.x
+X18r_tHDR_pos_merge_df$X18r1_tHDR_pre_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+X18r_tHDR_pos_merge_df$X18r2_tHDR_pre_lib_loess_r2 <- log2(X18r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r2_tHDR_pre_lib_pos_effects.x
+X18r_tHDR_pos_merge_df$X18r2_tHDR_pre_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X18r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X18r_tHDR_pos_merge_df$X18r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X18r_tHDR_post_lib_loess_median_syn_r1 <- median(X18r_tHDR_pos_merge_df[which(X18r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X18r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X18r_tHDR_post_lib_loess_median_syn_r2 <- median(X18r_tHDR_pos_merge_df[which(X18r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X18r2_tHDR_post_lib_loess_r2')])
+#defines A
+X18r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X18r_tHDR_post_lib_loess_median_syn_r1,X18r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X18r_tHDR_post_lib_loess_median_ns_r1 <- median(X18r_tHDR_pos_merge_df[which(X18r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X18r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X18r_tHDR_post_lib_loess_median_ns_r2 <- median(X18r_tHDR_pos_merge_df[which(X18r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X18r2_tHDR_post_lib_loess_r2')])
+#defines C
+X18r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X18r_tHDR_post_lib_loess_median_ns_r1,X18r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X18r_tHDR_pos_merge_df$X18r1_tHDR_post_lib_loess_r1_e.sns <- (X18r_tHDR_pos_merge_df$X18r1_tHDR_post_lib_loess_r1/(X18r_tHDR_post_lib_loess_median_syn_r1-X18r_tHDR_post_lib_loess_median_ns_r1))*(X18r_tHDR_post_lib_loess_median_syn_r1r2-X18r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X18r_tHDR_pos_merge_df$X18r2_tHDR_post_lib_loess_r2_e.sns <- (X18r_tHDR_pos_merge_df$X18r2_tHDR_post_lib_loess_r2/(X18r_tHDR_post_lib_loess_median_syn_r2-X18r_tHDR_post_lib_loess_median_ns_r2))*(X18r_tHDR_post_lib_loess_median_syn_r1r2-X18r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X18r_tHDR_pos_merge_df$X18r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X18r_tHDR_pos_merge_df$X18r1_tHDR_post_lib_loess_r1_e.sns+X18r_tHDR_pos_merge_df$X18r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X18r_tHDR_pos_merge_df)[names(X18r_tHDR_pos_merge_df) == "X18r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X18r_tHDR_pos_merge_df$exon = 'X18'
+X18r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X19r --
+#X19r1
+X19_posrange <- range(as.numeric(as.character(X19r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X19_posseq <- seq(from=X19_posrange[1], to=X19_posrange[2])
+X19r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X19r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X19r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X19r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X19r1_tHDR_pre_lib_pred <- predict(X19r1_tHDR_pre_lib_ratio.lo, newdata = X19_posseq, se=TRUE)
+X19r1_tHDR_pre_lib_pos_effects <- X19r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X19r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X19r1_tHDR_pre_lib_pos_effects)
+X19r1_tHDR_pre_lib_pos_effects_ci <- X19r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X19r1_tHDR_pre_lib_pred$df)
+X19r1_tHDR_pre_lib_pos_effects_ci_ymin = X19r1_tHDR_pre_lib_pos_effects - X19r1_tHDR_pre_lib_pos_effects_ci
+X19r1_tHDR_pre_lib_pos_effects_ci_ymax = X19r1_tHDR_pre_lib_pos_effects + X19r1_tHDR_pre_lib_pos_effects_ci
+X19r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X19_posseq, X19r1_tHDR_pre_lib_pos_effects, X19r1_tHDR_pre_lib_pos_effects.x, X19r1_tHDR_pre_lib_pos_effects_ci_ymin, X19r1_tHDR_pre_lib_pos_effects_ci_ymax, X19r1_tHDR_pre_lib_pred_se = X19r1_tHDR_pre_lib_pred$se.fit)
+#X19r2
+X19r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X19r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X19r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X19r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X19r2_tHDR_pre_lib_pred <- predict(X19r2_tHDR_pre_lib_ratio.lo, newdata = X19_posseq, se=TRUE)
+X19r2_tHDR_pre_lib_pos_effects <- X19r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X19r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X19r2_tHDR_pre_lib_pos_effects)
+X19r2_tHDR_pre_lib_pos_effects_ci <- X19r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X19r2_tHDR_pre_lib_pred$df)
+X19r2_tHDR_pre_lib_pos_effects_ci_ymin = X19r2_tHDR_pre_lib_pos_effects - X19r2_tHDR_pre_lib_pos_effects_ci
+X19r2_tHDR_pre_lib_pos_effects_ci_ymax = X19r2_tHDR_pre_lib_pos_effects + X19r2_tHDR_pre_lib_pos_effects_ci
+X19r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X19_posseq, X19r2_tHDR_pre_lib_pos_effects, X19r2_tHDR_pre_lib_pos_effects.x, X19r2_tHDR_pre_lib_pos_effects_ci_ymin, X19r2_tHDR_pre_lib_pos_effects_ci_ymax, X19r2_tHDR_pre_lib_pred_se = X19r2_tHDR_pre_lib_pred$se.fit)
+#X19r1r2
+X19r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X19r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X19r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X19r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X19r1r2_tHDR_pre_lib_pred <- predict(X19r1r2_tHDR_pre_lib_ratio.lo, newdata = X19_posseq, se=TRUE)
+X19r1r2_tHDR_pre_lib_pos_effects <- X19r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X19r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X19r1r2_tHDR_pre_lib_pos_effects)
+X19r1r2_tHDR_pre_lib_pos_effects_ci <- X19r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X19r1r2_tHDR_pre_lib_pred$df)
+X19r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X19r1r2_tHDR_pre_lib_pos_effects - X19r1r2_tHDR_pre_lib_pos_effects_ci
+X19r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X19r1r2_tHDR_pre_lib_pos_effects + X19r1r2_tHDR_pre_lib_pos_effects_ci
+X19r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X19_posseq, X19r1r2_tHDR_pre_lib_pos_effects, X19r1r2_tHDR_pre_lib_pos_effects.x, X19r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X19r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X19r1r2_tHDR_pre_lib_pred_se = X19r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X19r_tHDR_pos_merge_df <- merge(X19r1_prog_map_thresh5_df_r2_int_ord_df, X19r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X19r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X19r_tHDR_pos_merge_df <- merge(X19r_tHDR_pos_merge_df, X19r2_tHDR_pre_lib_pos_effects.df[, c("pos","X19r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X19r_tHDR_pos_merge_df <- merge(X19r_tHDR_pos_merge_df, X19r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X19r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X19r_tHDR_pos_merge_df$X19r1_tHDR_post_lib_loess_r1 <- log2(X19r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1_tHDR_pre_lib_pos_effects.x
+X19r_tHDR_pos_merge_df$X19r1_tHDR_post_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+X19r_tHDR_pos_merge_df$X19r2_tHDR_post_lib_loess_r2 <- log2(X19r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r2_tHDR_pre_lib_pos_effects.x
+X19r_tHDR_pos_merge_df$X19r2_tHDR_post_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+X19r_tHDR_pos_merge_df$X19r1r2_tHDR_post_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X19r_tHDR_pos_merge_df$X19r1_tHDR_pre_lib_loess_r1 <- log2(X19r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1_tHDR_pre_lib_pos_effects.x
+X19r_tHDR_pos_merge_df$X19r1_tHDR_pre_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+X19r_tHDR_pos_merge_df$X19r2_tHDR_pre_lib_loess_r2 <- log2(X19r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r2_tHDR_pre_lib_pos_effects.x
+X19r_tHDR_pos_merge_df$X19r2_tHDR_pre_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X19r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X19r_tHDR_pos_merge_df$X19r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X19r_tHDR_post_lib_loess_median_syn_r1 <- median(X19r_tHDR_pos_merge_df[which(X19r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X19r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X19r_tHDR_post_lib_loess_median_syn_r2 <- median(X19r_tHDR_pos_merge_df[which(X19r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X19r2_tHDR_post_lib_loess_r2')])
+#defines A
+X19r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X19r_tHDR_post_lib_loess_median_syn_r1,X19r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X19r_tHDR_post_lib_loess_median_ns_r1 <- median(X19r_tHDR_pos_merge_df[which(X19r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X19r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X19r_tHDR_post_lib_loess_median_ns_r2 <- median(X19r_tHDR_pos_merge_df[which(X19r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X19r2_tHDR_post_lib_loess_r2')])
+#defines C
+X19r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X19r_tHDR_post_lib_loess_median_ns_r1,X19r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X19r_tHDR_pos_merge_df$X19r1_tHDR_post_lib_loess_r1_e.sns <- (X19r_tHDR_pos_merge_df$X19r1_tHDR_post_lib_loess_r1/(X19r_tHDR_post_lib_loess_median_syn_r1-X19r_tHDR_post_lib_loess_median_ns_r1))*(X19r_tHDR_post_lib_loess_median_syn_r1r2-X19r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X19r_tHDR_pos_merge_df$X19r2_tHDR_post_lib_loess_r2_e.sns <- (X19r_tHDR_pos_merge_df$X19r2_tHDR_post_lib_loess_r2/(X19r_tHDR_post_lib_loess_median_syn_r2-X19r_tHDR_post_lib_loess_median_ns_r2))*(X19r_tHDR_post_lib_loess_median_syn_r1r2-X19r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X19r_tHDR_pos_merge_df$X19r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X19r_tHDR_pos_merge_df$X19r1_tHDR_post_lib_loess_r1_e.sns+X19r_tHDR_pos_merge_df$X19r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X19r_tHDR_pos_merge_df)[names(X19r_tHDR_pos_merge_df) == "X19r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X19r_tHDR_pos_merge_df$exon = 'X19'
+X19r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X20r --
+#X20r1
+X20_posrange <- range(as.numeric(as.character(X20r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X20_posseq <- seq(from=X20_posrange[1], to=X20_posrange[2])
+X20r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X20r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X20r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X20r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X20r1_tHDR_pre_lib_pred <- predict(X20r1_tHDR_pre_lib_ratio.lo, newdata = X20_posseq, se=TRUE)
+X20r1_tHDR_pre_lib_pos_effects <- X20r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X20r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X20r1_tHDR_pre_lib_pos_effects)
+X20r1_tHDR_pre_lib_pos_effects_ci <- X20r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X20r1_tHDR_pre_lib_pred$df)
+X20r1_tHDR_pre_lib_pos_effects_ci_ymin = X20r1_tHDR_pre_lib_pos_effects - X20r1_tHDR_pre_lib_pos_effects_ci
+X20r1_tHDR_pre_lib_pos_effects_ci_ymax = X20r1_tHDR_pre_lib_pos_effects + X20r1_tHDR_pre_lib_pos_effects_ci
+X20r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X20_posseq, X20r1_tHDR_pre_lib_pos_effects, X20r1_tHDR_pre_lib_pos_effects.x, X20r1_tHDR_pre_lib_pos_effects_ci_ymin, X20r1_tHDR_pre_lib_pos_effects_ci_ymax, X20r1_tHDR_pre_lib_pred_se = X20r1_tHDR_pre_lib_pred$se.fit)
+#X20r2
+X20r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X20r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X20r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X20r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X20r2_tHDR_pre_lib_pred <- predict(X20r2_tHDR_pre_lib_ratio.lo, newdata = X20_posseq, se=TRUE)
+X20r2_tHDR_pre_lib_pos_effects <- X20r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X20r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X20r2_tHDR_pre_lib_pos_effects)
+X20r2_tHDR_pre_lib_pos_effects_ci <- X20r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X20r2_tHDR_pre_lib_pred$df)
+X20r2_tHDR_pre_lib_pos_effects_ci_ymin = X20r2_tHDR_pre_lib_pos_effects - X20r2_tHDR_pre_lib_pos_effects_ci
+X20r2_tHDR_pre_lib_pos_effects_ci_ymax = X20r2_tHDR_pre_lib_pos_effects + X20r2_tHDR_pre_lib_pos_effects_ci
+X20r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X20_posseq, X20r2_tHDR_pre_lib_pos_effects, X20r2_tHDR_pre_lib_pos_effects.x, X20r2_tHDR_pre_lib_pos_effects_ci_ymin, X20r2_tHDR_pre_lib_pos_effects_ci_ymax, X20r2_tHDR_pre_lib_pred_se = X20r2_tHDR_pre_lib_pred$se.fit)
+#X20r1r2
+X20r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X20r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X20r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X20r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X20r1r2_tHDR_pre_lib_pred <- predict(X20r1r2_tHDR_pre_lib_ratio.lo, newdata = X20_posseq, se=TRUE)
+X20r1r2_tHDR_pre_lib_pos_effects <- X20r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X20r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X20r1r2_tHDR_pre_lib_pos_effects)
+X20r1r2_tHDR_pre_lib_pos_effects_ci <- X20r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X20r1r2_tHDR_pre_lib_pred$df)
+X20r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X20r1r2_tHDR_pre_lib_pos_effects - X20r1r2_tHDR_pre_lib_pos_effects_ci
+X20r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X20r1r2_tHDR_pre_lib_pos_effects + X20r1r2_tHDR_pre_lib_pos_effects_ci
+X20r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X20_posseq, X20r1r2_tHDR_pre_lib_pos_effects, X20r1r2_tHDR_pre_lib_pos_effects.x, X20r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X20r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X20r1r2_tHDR_pre_lib_pred_se = X20r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X20r_tHDR_pos_merge_df <- merge(X20r1_prog_map_thresh5_df_r2_int_ord_df, X20r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X20r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X20r_tHDR_pos_merge_df <- merge(X20r_tHDR_pos_merge_df, X20r2_tHDR_pre_lib_pos_effects.df[, c("pos","X20r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X20r_tHDR_pos_merge_df <- merge(X20r_tHDR_pos_merge_df, X20r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X20r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X20r_tHDR_pos_merge_df$X20r1_tHDR_post_lib_loess_r1 <- log2(X20r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1_tHDR_pre_lib_pos_effects.x
+X20r_tHDR_pos_merge_df$X20r1_tHDR_post_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+X20r_tHDR_pos_merge_df$X20r2_tHDR_post_lib_loess_r2 <- log2(X20r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r2_tHDR_pre_lib_pos_effects.x
+X20r_tHDR_pos_merge_df$X20r2_tHDR_post_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+X20r_tHDR_pos_merge_df$X20r1r2_tHDR_post_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X20r_tHDR_pos_merge_df$X20r1_tHDR_pre_lib_loess_r1 <- log2(X20r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1_tHDR_pre_lib_pos_effects.x
+X20r_tHDR_pos_merge_df$X20r1_tHDR_pre_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+X20r_tHDR_pos_merge_df$X20r2_tHDR_pre_lib_loess_r2 <- log2(X20r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r2_tHDR_pre_lib_pos_effects.x
+X20r_tHDR_pos_merge_df$X20r2_tHDR_pre_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X20r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X20r_tHDR_pos_merge_df$X20r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X20r_tHDR_post_lib_loess_median_syn_r1 <- median(X20r_tHDR_pos_merge_df[which(X20r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X20r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X20r_tHDR_post_lib_loess_median_syn_r2 <- median(X20r_tHDR_pos_merge_df[which(X20r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X20r2_tHDR_post_lib_loess_r2')])
+#defines A
+X20r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X20r_tHDR_post_lib_loess_median_syn_r1,X20r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X20r_tHDR_post_lib_loess_median_ns_r1 <- median(X20r_tHDR_pos_merge_df[which(X20r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X20r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X20r_tHDR_post_lib_loess_median_ns_r2 <- median(X20r_tHDR_pos_merge_df[which(X20r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X20r2_tHDR_post_lib_loess_r2')])
+#defines C
+X20r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X20r_tHDR_post_lib_loess_median_ns_r1,X20r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X20r_tHDR_pos_merge_df$X20r1_tHDR_post_lib_loess_r1_e.sns <- (X20r_tHDR_pos_merge_df$X20r1_tHDR_post_lib_loess_r1/(X20r_tHDR_post_lib_loess_median_syn_r1-X20r_tHDR_post_lib_loess_median_ns_r1))*(X20r_tHDR_post_lib_loess_median_syn_r1r2-X20r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X20r_tHDR_pos_merge_df$X20r2_tHDR_post_lib_loess_r2_e.sns <- (X20r_tHDR_pos_merge_df$X20r2_tHDR_post_lib_loess_r2/(X20r_tHDR_post_lib_loess_median_syn_r2-X20r_tHDR_post_lib_loess_median_ns_r2))*(X20r_tHDR_post_lib_loess_median_syn_r1r2-X20r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X20r_tHDR_pos_merge_df$X20r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X20r_tHDR_pos_merge_df$X20r1_tHDR_post_lib_loess_r1_e.sns+X20r_tHDR_pos_merge_df$X20r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X20r_tHDR_pos_merge_df)[names(X20r_tHDR_pos_merge_df) == "X20r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X20r_tHDR_pos_merge_df$exon = 'X20'
+X20r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X21r --
+#X21r1
+X21_posrange <- range(as.numeric(as.character(X21r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X21_posseq <- seq(from=X21_posrange[1], to=X21_posrange[2])
+X21r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X21r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X21r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X21r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X21r1_tHDR_pre_lib_pred <- predict(X21r1_tHDR_pre_lib_ratio.lo, newdata = X21_posseq, se=TRUE)
+X21r1_tHDR_pre_lib_pos_effects <- X21r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X21r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X21r1_tHDR_pre_lib_pos_effects)
+X21r1_tHDR_pre_lib_pos_effects_ci <- X21r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X21r1_tHDR_pre_lib_pred$df)
+X21r1_tHDR_pre_lib_pos_effects_ci_ymin = X21r1_tHDR_pre_lib_pos_effects - X21r1_tHDR_pre_lib_pos_effects_ci
+X21r1_tHDR_pre_lib_pos_effects_ci_ymax = X21r1_tHDR_pre_lib_pos_effects + X21r1_tHDR_pre_lib_pos_effects_ci
+X21r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X21_posseq, X21r1_tHDR_pre_lib_pos_effects, X21r1_tHDR_pre_lib_pos_effects.x, X21r1_tHDR_pre_lib_pos_effects_ci_ymin, X21r1_tHDR_pre_lib_pos_effects_ci_ymax, X21r1_tHDR_pre_lib_pred_se = X21r1_tHDR_pre_lib_pred$se.fit)
+#X21r2
+X21r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X21r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X21r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X21r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X21r2_tHDR_pre_lib_pred <- predict(X21r2_tHDR_pre_lib_ratio.lo, newdata = X21_posseq, se=TRUE)
+X21r2_tHDR_pre_lib_pos_effects <- X21r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X21r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X21r2_tHDR_pre_lib_pos_effects)
+X21r2_tHDR_pre_lib_pos_effects_ci <- X21r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X21r2_tHDR_pre_lib_pred$df)
+X21r2_tHDR_pre_lib_pos_effects_ci_ymin = X21r2_tHDR_pre_lib_pos_effects - X21r2_tHDR_pre_lib_pos_effects_ci
+X21r2_tHDR_pre_lib_pos_effects_ci_ymax = X21r2_tHDR_pre_lib_pos_effects + X21r2_tHDR_pre_lib_pos_effects_ci
+X21r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X21_posseq, X21r2_tHDR_pre_lib_pos_effects, X21r2_tHDR_pre_lib_pos_effects.x, X21r2_tHDR_pre_lib_pos_effects_ci_ymin, X21r2_tHDR_pre_lib_pos_effects_ci_ymax, X21r2_tHDR_pre_lib_pred_se = X21r2_tHDR_pre_lib_pred$se.fit)
+#X21r1r2
+X21r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X21r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X21r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X21r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X21r1r2_tHDR_pre_lib_pred <- predict(X21r1r2_tHDR_pre_lib_ratio.lo, newdata = X21_posseq, se=TRUE)
+X21r1r2_tHDR_pre_lib_pos_effects <- X21r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X21r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X21r1r2_tHDR_pre_lib_pos_effects)
+X21r1r2_tHDR_pre_lib_pos_effects_ci <- X21r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X21r1r2_tHDR_pre_lib_pred$df)
+X21r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X21r1r2_tHDR_pre_lib_pos_effects - X21r1r2_tHDR_pre_lib_pos_effects_ci
+X21r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X21r1r2_tHDR_pre_lib_pos_effects + X21r1r2_tHDR_pre_lib_pos_effects_ci
+X21r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X21_posseq, X21r1r2_tHDR_pre_lib_pos_effects, X21r1r2_tHDR_pre_lib_pos_effects.x, X21r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X21r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X21r1r2_tHDR_pre_lib_pred_se = X21r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X21r_tHDR_pos_merge_df <- merge(X21r1_prog_map_thresh5_df_r2_int_ord_df, X21r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X21r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X21r_tHDR_pos_merge_df <- merge(X21r_tHDR_pos_merge_df, X21r2_tHDR_pre_lib_pos_effects.df[, c("pos","X21r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X21r_tHDR_pos_merge_df <- merge(X21r_tHDR_pos_merge_df, X21r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X21r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X21r_tHDR_pos_merge_df$X21r1_tHDR_post_lib_loess_r1 <- log2(X21r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1_tHDR_pre_lib_pos_effects.x
+X21r_tHDR_pos_merge_df$X21r1_tHDR_post_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+X21r_tHDR_pos_merge_df$X21r2_tHDR_post_lib_loess_r2 <- log2(X21r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r2_tHDR_pre_lib_pos_effects.x
+X21r_tHDR_pos_merge_df$X21r2_tHDR_post_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+X21r_tHDR_pos_merge_df$X21r1r2_tHDR_post_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X21r_tHDR_pos_merge_df$X21r1_tHDR_pre_lib_loess_r1 <- log2(X21r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1_tHDR_pre_lib_pos_effects.x
+X21r_tHDR_pos_merge_df$X21r1_tHDR_pre_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+X21r_tHDR_pos_merge_df$X21r2_tHDR_pre_lib_loess_r2 <- log2(X21r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r2_tHDR_pre_lib_pos_effects.x
+X21r_tHDR_pos_merge_df$X21r2_tHDR_pre_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X21r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X21r_tHDR_pos_merge_df$X21r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X21r_tHDR_post_lib_loess_median_syn_r1 <- median(X21r_tHDR_pos_merge_df[which(X21r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X21r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X21r_tHDR_post_lib_loess_median_syn_r2 <- median(X21r_tHDR_pos_merge_df[which(X21r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X21r2_tHDR_post_lib_loess_r2')])
+#defines A
+X21r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X21r_tHDR_post_lib_loess_median_syn_r1,X21r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X21r_tHDR_post_lib_loess_median_ns_r1 <- median(X21r_tHDR_pos_merge_df[which(X21r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X21r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X21r_tHDR_post_lib_loess_median_ns_r2 <- median(X21r_tHDR_pos_merge_df[which(X21r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X21r2_tHDR_post_lib_loess_r2')])
+#defines C
+X21r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X21r_tHDR_post_lib_loess_median_ns_r1,X21r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X21r_tHDR_pos_merge_df$X21r1_tHDR_post_lib_loess_r1_e.sns <- (X21r_tHDR_pos_merge_df$X21r1_tHDR_post_lib_loess_r1/(X21r_tHDR_post_lib_loess_median_syn_r1-X21r_tHDR_post_lib_loess_median_ns_r1))*(X21r_tHDR_post_lib_loess_median_syn_r1r2-X21r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X21r_tHDR_pos_merge_df$X21r2_tHDR_post_lib_loess_r2_e.sns <- (X21r_tHDR_pos_merge_df$X21r2_tHDR_post_lib_loess_r2/(X21r_tHDR_post_lib_loess_median_syn_r2-X21r_tHDR_post_lib_loess_median_ns_r2))*(X21r_tHDR_post_lib_loess_median_syn_r1r2-X21r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X21r_tHDR_pos_merge_df$X21r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X21r_tHDR_pos_merge_df$X21r1_tHDR_post_lib_loess_r1_e.sns+X21r_tHDR_pos_merge_df$X21r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X21r_tHDR_pos_merge_df)[names(X21r_tHDR_pos_merge_df) == "X21r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X21r_tHDR_pos_merge_df$exon = 'X21'
+X21r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X22r --
+#X22r1
+X22_posrange <- range(as.numeric(as.character(X22r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X22_posseq <- seq(from=X22_posrange[1], to=X22_posrange[2])
+X22r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X22r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X22r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X22r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X22r1_tHDR_pre_lib_pred <- predict(X22r1_tHDR_pre_lib_ratio.lo, newdata = X22_posseq, se=TRUE)
+X22r1_tHDR_pre_lib_pos_effects <- X22r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X22r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X22r1_tHDR_pre_lib_pos_effects)
+X22r1_tHDR_pre_lib_pos_effects_ci <- X22r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X22r1_tHDR_pre_lib_pred$df)
+X22r1_tHDR_pre_lib_pos_effects_ci_ymin = X22r1_tHDR_pre_lib_pos_effects - X22r1_tHDR_pre_lib_pos_effects_ci
+X22r1_tHDR_pre_lib_pos_effects_ci_ymax = X22r1_tHDR_pre_lib_pos_effects + X22r1_tHDR_pre_lib_pos_effects_ci
+X22r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X22_posseq, X22r1_tHDR_pre_lib_pos_effects, X22r1_tHDR_pre_lib_pos_effects.x, X22r1_tHDR_pre_lib_pos_effects_ci_ymin, X22r1_tHDR_pre_lib_pos_effects_ci_ymax, X22r1_tHDR_pre_lib_pred_se = X22r1_tHDR_pre_lib_pred$se.fit)
+#X22r2
+X22r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X22r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X22r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X22r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X22r2_tHDR_pre_lib_pred <- predict(X22r2_tHDR_pre_lib_ratio.lo, newdata = X22_posseq, se=TRUE)
+X22r2_tHDR_pre_lib_pos_effects <- X22r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X22r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X22r2_tHDR_pre_lib_pos_effects)
+X22r2_tHDR_pre_lib_pos_effects_ci <- X22r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X22r2_tHDR_pre_lib_pred$df)
+X22r2_tHDR_pre_lib_pos_effects_ci_ymin = X22r2_tHDR_pre_lib_pos_effects - X22r2_tHDR_pre_lib_pos_effects_ci
+X22r2_tHDR_pre_lib_pos_effects_ci_ymax = X22r2_tHDR_pre_lib_pos_effects + X22r2_tHDR_pre_lib_pos_effects_ci
+X22r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X22_posseq, X22r2_tHDR_pre_lib_pos_effects, X22r2_tHDR_pre_lib_pos_effects.x, X22r2_tHDR_pre_lib_pos_effects_ci_ymin, X22r2_tHDR_pre_lib_pos_effects_ci_ymax, X22r2_tHDR_pre_lib_pred_se = X22r2_tHDR_pre_lib_pred$se.fit)
+#X22r1r2
+X22r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X22r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X22r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X22r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X22r1r2_tHDR_pre_lib_pred <- predict(X22r1r2_tHDR_pre_lib_ratio.lo, newdata = X22_posseq, se=TRUE)
+X22r1r2_tHDR_pre_lib_pos_effects <- X22r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X22r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X22r1r2_tHDR_pre_lib_pos_effects)
+X22r1r2_tHDR_pre_lib_pos_effects_ci <- X22r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X22r1r2_tHDR_pre_lib_pred$df)
+X22r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X22r1r2_tHDR_pre_lib_pos_effects - X22r1r2_tHDR_pre_lib_pos_effects_ci
+X22r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X22r1r2_tHDR_pre_lib_pos_effects + X22r1r2_tHDR_pre_lib_pos_effects_ci
+X22r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X22_posseq, X22r1r2_tHDR_pre_lib_pos_effects, X22r1r2_tHDR_pre_lib_pos_effects.x, X22r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X22r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X22r1r2_tHDR_pre_lib_pred_se = X22r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X22r_tHDR_pos_merge_df <- merge(X22r1_prog_map_thresh5_df_r2_int_ord_df, X22r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X22r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X22r_tHDR_pos_merge_df <- merge(X22r_tHDR_pos_merge_df, X22r2_tHDR_pre_lib_pos_effects.df[, c("pos","X22r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X22r_tHDR_pos_merge_df <- merge(X22r_tHDR_pos_merge_df, X22r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X22r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X22r_tHDR_pos_merge_df$X22r1_tHDR_post_lib_loess_r1 <- log2(X22r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1_tHDR_pre_lib_pos_effects.x
+X22r_tHDR_pos_merge_df$X22r1_tHDR_post_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+X22r_tHDR_pos_merge_df$X22r2_tHDR_post_lib_loess_r2 <- log2(X22r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r2_tHDR_pre_lib_pos_effects.x
+X22r_tHDR_pos_merge_df$X22r2_tHDR_post_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+X22r_tHDR_pos_merge_df$X22r1r2_tHDR_post_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X22r_tHDR_pos_merge_df$X22r1_tHDR_pre_lib_loess_r1 <- log2(X22r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1_tHDR_pre_lib_pos_effects.x
+X22r_tHDR_pos_merge_df$X22r1_tHDR_pre_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+X22r_tHDR_pos_merge_df$X22r2_tHDR_pre_lib_loess_r2 <- log2(X22r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r2_tHDR_pre_lib_pos_effects.x
+X22r_tHDR_pos_merge_df$X22r2_tHDR_pre_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X22r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X22r_tHDR_pos_merge_df$X22r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X22r_tHDR_post_lib_loess_median_syn_r1 <- median(X22r_tHDR_pos_merge_df[which(X22r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X22r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X22r_tHDR_post_lib_loess_median_syn_r2 <- median(X22r_tHDR_pos_merge_df[which(X22r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X22r2_tHDR_post_lib_loess_r2')])
+#defines A
+X22r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X22r_tHDR_post_lib_loess_median_syn_r1,X22r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X22r_tHDR_post_lib_loess_median_ns_r1 <- median(X22r_tHDR_pos_merge_df[which(X22r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X22r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X22r_tHDR_post_lib_loess_median_ns_r2 <- median(X22r_tHDR_pos_merge_df[which(X22r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X22r2_tHDR_post_lib_loess_r2')])
+#defines C
+X22r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X22r_tHDR_post_lib_loess_median_ns_r1,X22r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X22r_tHDR_pos_merge_df$X22r1_tHDR_post_lib_loess_r1_e.sns <- (X22r_tHDR_pos_merge_df$X22r1_tHDR_post_lib_loess_r1/(X22r_tHDR_post_lib_loess_median_syn_r1-X22r_tHDR_post_lib_loess_median_ns_r1))*(X22r_tHDR_post_lib_loess_median_syn_r1r2-X22r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X22r_tHDR_pos_merge_df$X22r2_tHDR_post_lib_loess_r2_e.sns <- (X22r_tHDR_pos_merge_df$X22r2_tHDR_post_lib_loess_r2/(X22r_tHDR_post_lib_loess_median_syn_r2-X22r_tHDR_post_lib_loess_median_ns_r2))*(X22r_tHDR_post_lib_loess_median_syn_r1r2-X22r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X22r_tHDR_pos_merge_df$X22r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X22r_tHDR_pos_merge_df$X22r1_tHDR_post_lib_loess_r1_e.sns+X22r_tHDR_pos_merge_df$X22r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X22r_tHDR_pos_merge_df)[names(X22r_tHDR_pos_merge_df) == "X22r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X22r_tHDR_pos_merge_df$exon = 'X22'
+X22r_tHDR_pos_merge_df$rep_type = 'r'
+
+
+
+
+#X23r --
+#X23r1
+X23_posrange <- range(as.numeric(as.character(X23r1_prog_map_thresh5_df_r2_int_ord_df$pos)))
+X23_posseq <- seq(from=X23_posrange[1], to=X23_posrange[2])
+X23r1_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X23r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X23r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_synnorm > 0.8 & X23r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X23r1_tHDR_pre_lib_pred <- predict(X23r1_tHDR_pre_lib_ratio.lo, newdata = X23_posseq, se=TRUE)
+X23r1_tHDR_pre_lib_pos_effects <- X23r1_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X23r1_tHDR_pre_lib_pos_effects.x <- extend_fit(X23r1_tHDR_pre_lib_pos_effects)
+X23r1_tHDR_pre_lib_pos_effects_ci <- X23r1_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X23r1_tHDR_pre_lib_pred$df)
+X23r1_tHDR_pre_lib_pos_effects_ci_ymin = X23r1_tHDR_pre_lib_pos_effects - X23r1_tHDR_pre_lib_pos_effects_ci
+X23r1_tHDR_pre_lib_pos_effects_ci_ymax = X23r1_tHDR_pre_lib_pos_effects + X23r1_tHDR_pre_lib_pos_effects_ci
+X23r1_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X23_posseq, X23r1_tHDR_pre_lib_pos_effects, X23r1_tHDR_pre_lib_pos_effects.x, X23r1_tHDR_pre_lib_pos_effects_ci_ymin, X23r1_tHDR_pre_lib_pos_effects_ci_ymax, X23r1_tHDR_pre_lib_pred_se = X23r1_tHDR_pre_lib_pred$se.fit)
+#X23r2
+X23r2_tHDR_pre_lib_ratio.lo <- loess(log2(r2_tHDR_pre_lib_ratio_synnorm) ~ as.numeric(as.character(pos)), X23r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X23r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_post_pre_ratio_synnorm > 0.8 & X23r1_prog_map_thresh5_df_r2_int_ord_df$r2_tHDR_pre_lib_ratio_synnorm > 0.5), model=TRUE,span=0.15)
+X23r2_tHDR_pre_lib_pred <- predict(X23r2_tHDR_pre_lib_ratio.lo, newdata = X23_posseq, se=TRUE)
+X23r2_tHDR_pre_lib_pos_effects <- X23r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X23r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X23r2_tHDR_pre_lib_pos_effects)
+X23r2_tHDR_pre_lib_pos_effects_ci <- X23r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X23r2_tHDR_pre_lib_pred$df)
+X23r2_tHDR_pre_lib_pos_effects_ci_ymin = X23r2_tHDR_pre_lib_pos_effects - X23r2_tHDR_pre_lib_pos_effects_ci
+X23r2_tHDR_pre_lib_pos_effects_ci_ymax = X23r2_tHDR_pre_lib_pos_effects + X23r2_tHDR_pre_lib_pos_effects_ci
+X23r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X23_posseq, X23r2_tHDR_pre_lib_pos_effects, X23r2_tHDR_pre_lib_pos_effects.x, X23r2_tHDR_pre_lib_pos_effects_ci_ymin, X23r2_tHDR_pre_lib_pos_effects_ci_ymax, X23r2_tHDR_pre_lib_pred_se = X23r2_tHDR_pre_lib_pred$se.fit)
+#X23r1r2
+X23r1r2_tHDR_pre_lib_ratio.lo <- loess(log2(tHDR_pre_lib_ratio_r1r2_mean_synnorm) ~ as.numeric(as.character(pos)), X23r1_prog_map_thresh5_df_r2_int_ord_df, subset = which(X23r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_post_pre_ratio_r1r2_mean_synnorm > 0.8 & X23r1_prog_map_thresh5_df_r2_int_ord_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm > 0.5), model=TRUE,span=0.15)
+X23r1r2_tHDR_pre_lib_pred <- predict(X23r1r2_tHDR_pre_lib_ratio.lo, newdata = X23_posseq, se=TRUE)
+X23r1r2_tHDR_pre_lib_pos_effects <- X23r1r2_tHDR_pre_lib_pred$fit
+#.x represents the extended pos_effects.
+X23r1r2_tHDR_pre_lib_pos_effects.x <- extend_fit(X23r1r2_tHDR_pre_lib_pos_effects)
+X23r1r2_tHDR_pre_lib_pos_effects_ci <- X23r1r2_tHDR_pre_lib_pred$se.fit * qt(0.95 / 2 + .5, X23r1r2_tHDR_pre_lib_pred$df)
+X23r1r2_tHDR_pre_lib_pos_effects_ci_ymin = X23r1r2_tHDR_pre_lib_pos_effects - X23r1r2_tHDR_pre_lib_pos_effects_ci
+X23r1r2_tHDR_pre_lib_pos_effects_ci_ymax = X23r1r2_tHDR_pre_lib_pos_effects + X23r1r2_tHDR_pre_lib_pos_effects_ci
+X23r1r2_tHDR_pre_lib_pos_effects.df <- data.frame(pos = X23_posseq, X23r1r2_tHDR_pre_lib_pos_effects, X23r1r2_tHDR_pre_lib_pos_effects.x, X23r1r2_tHDR_pre_lib_pos_effects_ci_ymin, X23r1r2_tHDR_pre_lib_pos_effects_ci_ymax, X23r1r2_tHDR_pre_lib_pred_se = X23r1r2_tHDR_pre_lib_pred$se.fit)
+#merge into a single df (merge original df, and pos effects (extended) df's from all 3 fits -- r1, r2, r1r2)
+X23r_tHDR_pos_merge_df <- merge(X23r1_prog_map_thresh5_df_r2_int_ord_df, X23r1_tHDR_pre_lib_pos_effects.df[, c("pos", "X23r1_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X23r_tHDR_pos_merge_df <- merge(X23r_tHDR_pos_merge_df, X23r2_tHDR_pre_lib_pos_effects.df[, c("pos","X23r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+X23r_tHDR_pos_merge_df <- merge(X23r_tHDR_pos_merge_df, X23r1r2_tHDR_pre_lib_pos_effects.df[, c("pos","X23r1r2_tHDR_pre_lib_pos_effects.x")], by="pos",all.x=TRUE)
+
+#Calculate adjusted ratios and put into df (along with affect sizes)
+#5 adjustments for each post-lib and pre-lib measurement (e.g. r1 vs. r1_fit and vs. mean_fit)
+X23r_tHDR_pos_merge_df$X23r1_tHDR_post_lib_loess_r1 <- log2(X23r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1_tHDR_pre_lib_pos_effects.x
+X23r_tHDR_pos_merge_df$X23r1_tHDR_post_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$tHDR_post_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+X23r_tHDR_pos_merge_df$X23r2_tHDR_post_lib_loess_r2 <- log2(X23r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r2_tHDR_pre_lib_pos_effects.x
+X23r_tHDR_pos_merge_df$X23r2_tHDR_post_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$r2_tHDR_post_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+X23r_tHDR_pos_merge_df$X23r1r2_tHDR_post_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$tHDR_post_lib_ratio_r1r2_mean_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+###same for pre-lib
+X23r_tHDR_pos_merge_df$X23r1_tHDR_pre_lib_loess_r1 <- log2(X23r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1_tHDR_pre_lib_pos_effects.x
+X23r_tHDR_pos_merge_df$X23r1_tHDR_pre_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+X23r_tHDR_pos_merge_df$X23r2_tHDR_pre_lib_loess_r2 <- log2(X23r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r2_tHDR_pre_lib_pos_effects.x
+X23r_tHDR_pos_merge_df$X23r2_tHDR_pre_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$r2_tHDR_pre_lib_ratio_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_loess_r1r2 <- log2(X23r_tHDR_pos_merge_df$tHDR_pre_lib_ratio_r1r2_mean_synnorm) - X23r_tHDR_pos_merge_df$X23r1r2_tHDR_pre_lib_pos_effects.x
+
+#these plots have set cartesians for comparing on same axes -- plot to illustrate how pos-correction works.
+#plotting r1:  original data, fit 1, and fit 2, for tHDR_pre_lib
+#redo same plot but with r2:
+
+#plot of the averaged data with all 3 fit lines (SYN is average, two indiv. reps in gray), and then corrected according to averaged fit (two plots)
+
+#plotting original post-lib data (mean), w/ all 3 fits, and subtracted post-lib data using the averages fit.
+
+#plot the two independently processed replicates against each other:
+
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#test bimodality with a histogram (using each rep's post-lib w. the mean fit):
+
+#mean histogram using mean fit
+
+#include a within-replicate sns normalization (e.sns) next
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#defines a for r1
+X23r_tHDR_post_lib_loess_median_syn_r1 <- median(X23r_tHDR_pos_merge_df[which(X23r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X23r1_tHDR_post_lib_loess_r1')])
+#defines a for r2
+X23r_tHDR_post_lib_loess_median_syn_r2 <- median(X23r_tHDR_pos_merge_df[which(X23r_tHDR_pos_merge_df$conseq == 'SYNONYMOUS'),c('X23r2_tHDR_post_lib_loess_r2')])
+#defines A
+X23r_tHDR_post_lib_loess_median_syn_r1r2 <- mean(c(X23r_tHDR_post_lib_loess_median_syn_r1,X23r_tHDR_post_lib_loess_median_syn_r2))
+
+#define c for r1
+X23r_tHDR_post_lib_loess_median_ns_r1 <- median(X23r_tHDR_pos_merge_df[which(X23r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X23r1_tHDR_post_lib_loess_r1')])
+#define c for r2
+X23r_tHDR_post_lib_loess_median_ns_r2 <- median(X23r_tHDR_pos_merge_df[which(X23r_tHDR_pos_merge_df$conseq == 'STOP_GAINED'),c('X23r2_tHDR_post_lib_loess_r2')])
+#defines C
+X23r_tHDR_post_lib_loess_median_ns_r1r2 <- mean(c(X23r_tHDR_post_lib_loess_median_ns_r1,X23r_tHDR_post_lib_loess_median_ns_r2))
+
+#calculate new b values for r1 'e.sns' = exon syn/ns norm.
+X23r_tHDR_pos_merge_df$X23r1_tHDR_post_lib_loess_r1_e.sns <- (X23r_tHDR_pos_merge_df$X23r1_tHDR_post_lib_loess_r1/(X23r_tHDR_post_lib_loess_median_syn_r1-X23r_tHDR_post_lib_loess_median_ns_r1))*(X23r_tHDR_post_lib_loess_median_syn_r1r2-X23r_tHDR_post_lib_loess_median_ns_r1r2)
+#calculate new b values for r2 'e.sns' = exon syn/ns norm.
+X23r_tHDR_pos_merge_df$X23r2_tHDR_post_lib_loess_r2_e.sns <- (X23r_tHDR_pos_merge_df$X23r2_tHDR_post_lib_loess_r2/(X23r_tHDR_post_lib_loess_median_syn_r2-X23r_tHDR_post_lib_loess_median_ns_r2))*(X23r_tHDR_post_lib_loess_median_syn_r1r2-X23r_tHDR_post_lib_loess_median_ns_r1r2)
+
+#calculate a new post_lib mean based on individually fit, exon-normalized data
+X23r_tHDR_pos_merge_df$X23r_tHDR_post_lib_loess_e.sns_r1r2_mean <- (X23r_tHDR_pos_merge_df$X23r1_tHDR_post_lib_loess_r1_e.sns+X23r_tHDR_pos_merge_df$X23r2_tHDR_post_lib_loess_r2_e.sns)/2
+
+#histograms like above but with e.sns post-lib measurements
+#test bimodality with a histogram (using each rep's post-lib w. each rep's fit):
+
+
+#histo of exon mean from individually processed replicates:
+#comparing the averaged processing (top) with individual replicate processing (bottom):
+
+
+##change the names of these categories to take out the exon number so they can be merged into a single df later.
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_pre_lib_pos_effects.x"] <- "r1_tHDR_pre_lib_pos_effects.x"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_pre_lib_pos_effects.x"] <- "r2_tHDR_pre_lib_pos_effects.x"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1r2_tHDR_pre_lib_pos_effects.x"] <- "r1r2_tHDR_pre_lib_pos_effects.x"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_post_lib_loess_r1"] <- "r1_tHDR_post_lib_loess_r1"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_post_lib_loess_r1r2"] <- "r1_tHDR_post_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_post_lib_loess_r2"] <- "r2_tHDR_post_lib_loess_r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_post_lib_loess_r1r2"] <- "r2_tHDR_post_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1r2_tHDR_post_lib_loess_r1r2"] <- "r1r2_tHDR_post_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_pre_lib_loess_r1"] <- "r1_tHDR_pre_lib_loess_r1"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_pre_lib_loess_r1r2"] <- "r1_tHDR_pre_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_pre_lib_loess_r2"] <- "r2_tHDR_pre_lib_loess_r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_pre_lib_loess_r1r2"] <- "r2_tHDR_pre_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1r2_tHDR_pre_lib_loess_r1r2"] <- "r1r2_tHDR_pre_lib_loess_r1r2"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r1_tHDR_post_lib_loess_r1_e.sns"] <- "r1_tHDR_post_lib_loess_r1_e.sns"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r2_tHDR_post_lib_loess_r2_e.sns"] <- "r2_tHDR_post_lib_loess_r2_e.sns"
+names(X23r_tHDR_pos_merge_df)[names(X23r_tHDR_pos_merge_df) == "X23r_tHDR_post_lib_loess_e.sns_r1r2_mean"] <- "r_tHDR_post_lib_loess_e.sns_r1r2_mean"
+#add the name of the exon and the replicate type (e.g. 'r')
+X23r_tHDR_pos_merge_df$exon = 'X23'
+X23r_tHDR_pos_merge_df$rep_type = 'r'
+

@@ -1,0 +1,1410 @@
+---
+title: "BRCA1_SGE1_global_20171119.Rmd"
+author: "Greg Findlay"
+date: "11/19/2017"
+output: html_document
+---
+file copied from the BRCA1_SGE2_global_20171119 file and then converted by replacing:
+1. XrL4 with rL4
+2. rL41 with r1
+3. rL42 with r2
+4. rL4 with r
+
+Updated global analysis scripts to apply filters and get final functional scores with updated pipeline for both SGE1 and SGE2.
+
+UPDATE:  Error in using sapply for bravo, flossies and gnomAD alleles...not sure why.
+```{r}
+#MUST RUN POSITIONAL CORRECTION MARKDOWN SCRIPTS
+#i.e. positional_modeling_SGE1_v6_20171012.Rmd
+# tHDR_pos_merge_df are built with Xyyr1_prog_map_thresh5_df_r2_int_ord_df -- prog_map means:                all_hdr_variant == TRUE, !=WT ,POS!= REF, and > threshold of 0.00001
+#add a position from PAM based on exon...
+# merge df's built off the prog_map_thresh_5 data sets.
+#previous change in code in sam_to_edits script dictated that 'hdr5' is always the cut-proximal site, and 'hdr3' is always the cut-distal site, so here even though X2, X5 and X15 are cut at the 3' PAM site, 'hdr5' is still used to indicate we want the data at the cut site.
+X2r_tHDR_pos_merge_df$hdr_cut <- X2r_tHDR_pos_merge_df$hdr5
+X3r_tHDR_pos_merge_df$hdr_cut <- X3r_tHDR_pos_merge_df$hdr5
+X4r_tHDR_pos_merge_df$hdr_cut <- X4r_tHDR_pos_merge_df$hdr5
+X5r_tHDR_pos_merge_df$hdr_cut <- X5r_tHDR_pos_merge_df$hdr5
+X15r_tHDR_pos_merge_df$hdr_cut <- X15r_tHDR_pos_merge_df$hdr5
+X16r_tHDR_pos_merge_df$hdr_cut <- X16r_tHDR_pos_merge_df$hdr5
+X17r_tHDR_pos_merge_df$hdr_cut <- X17r_tHDR_pos_merge_df$hdr5
+X18r_tHDR_pos_merge_df$hdr_cut <- X18r_tHDR_pos_merge_df$hdr5
+X19r_tHDR_pos_merge_df$hdr_cut <- X19r_tHDR_pos_merge_df$hdr5
+X20r_tHDR_pos_merge_df$hdr_cut <- X20r_tHDR_pos_merge_df$hdr5
+X21r_tHDR_pos_merge_df$hdr_cut <- X21r_tHDR_pos_merge_df$hdr5
+X22r_tHDR_pos_merge_df$hdr_cut <- X22r_tHDR_pos_merge_df$hdr5
+X23r_tHDR_pos_merge_df$hdr_cut <- X23r_tHDR_pos_merge_df$hdr5
+#calling these again in case old script re-assigned without the 0-indexing adjustment
+X2_cut_pos <- 41276033.5+1
+X3_cut_pos <- 41267763.5+1
+X4_cut_pos <- 41258518.5+1 
+X5_cut_pos <- 41256892.5+1
+X15_cut_pos <- 41222951.5+1
+X16_cut_pos <- 41219676.5+1
+X17_cut_pos <- 41215950.5+1
+X18_cut_pos <- 41215377.5+1
+X19_cut_pos <- 41209129.5+1
+X20_cut_pos <- 41203127.5+1
+X21_cut_pos <- 41201207.5+1
+X22_cut_pos <- 41199706.5+1
+X23_cut_pos <- 41197794.5+1
+
+#binding all of the merge df's together...
+Xr_all_tHDR_pos_merge_master_df <- rbind(X2r_tHDR_pos_merge_df,X3r_tHDR_pos_merge_df,X4r_tHDR_pos_merge_df,X5r_tHDR_pos_merge_df,X15r_tHDR_pos_merge_df,X16r_tHDR_pos_merge_df,X17r_tHDR_pos_merge_df,X18r_tHDR_pos_merge_df,X19r_tHDR_pos_merge_df,X20r_tHDR_pos_merge_df,X21r_tHDR_pos_merge_df,X22r_tHDR_pos_merge_df,X23r_tHDR_pos_merge_df)
+
+Xr_all_tHDR_pos_merge_master_df$pos_alt <- paste(Xr_all_tHDR_pos_merge_master_df$pos, Xr_all_tHDR_pos_merge_master_df$alt, sep='')
+#add a clinvar transcript annotation here
+#add a clinvar mutation string i.e. c.
+#add some sort of intronic indication (i.e. c. 5017 -3 C -> A)
+
+#write.table(Xr_all_tHDR_pos_merge_master_df, "/mount/SGE/BRCA1/Xr_all_tHDR_pos_merge_v6_df_20171119.txt", sep="\t")
+Xr_all_tHDR_pos_merge_master_df <- read.table("/mount/SGE/BRCA1/Xr_all_tHDR_pos_merge_v6_df_20171119.txt", sep="\t")
+
+### Detect outliers in data set by comparing post-pre selection and pre-lib selection
+#accounting for position again, but emphasizing outliers
+#same plot as above but fitting curves by conseq, as well as total fit
+
+
+#does post/lib give a different result than pre/lib+post/pre?
+
+#does post/lib give a different result than pre/lib+post/pre (labelled with exon)
+
+#and with a density contour...
+#ID outliers with high pre/lib:
+Xr_all_tHDR_pos_merge_master_df[which(as.numeric(as.character(Xr_all_tHDR_pos_merge_master_df$r1r2_tHDR_pre_lib_loess_r1r2)) > 1.2),c('exon','pos','conseq','r1r2_tHDR_pre_lib_loess_r1r2','tHDR_post_pre_ratio_r1r2_mean_synnorm')]
+#ID outliers with lost pre/lib
+Xr_all_tHDR_pos_merge_master_df[which(as.numeric(as.character(Xr_all_tHDR_pos_merge_master_df$r1r2_tHDR_pre_lib_loess_r1r2)) < -2 ),c('exon','pos','conseq','r1r2_tHDR_pre_lib_loess_r1r2','tHDR_post_pre_ratio_r1r2_mean_synnorm')]
+
+#global plot vs. error:
+
+#do any variants drop out completely? lib to pre
+#with size being correction rate:
+
+#tHDR reads
+
+#do any variants drop out completely? pre to post
+
+#tHDR reads
+
+#variant filtering:
+#r1 frequency already must be >= .00001
+length(Xr_all_tHDR_pos_merge_master_df$tHDR_lib_pseudo_freq)
+length(which(Xr_all_tHDR_pos_merge_master_df$tHDR_lib_pseudo_freq > 10^-4))
+length(which(Xr_all_tHDR_pos_merge_master_df$r2_pre_freq >= 0.00001))
+
+#NOTE -- DEMAND that only the one matching the exon's cut end is yes!! This will solve all NAG / NTG issues...
+length(which(Xr_all_tHDR_pos_merge_master_df$c_hdr_snv == 'True'))
+length(which(Xr_all_tHDR_pos_merge_master_df$hdr3 =='yes')) #distal edits
+length(which(Xr_all_tHDR_pos_merge_master_df$hdr5 =='yes')) #proximal edits
+#want this one!!
+length(which(Xr_all_tHDR_pos_merge_master_df$hdr_cut =='yes'))
+
+Xr_all_filter_lib_hdr_cut_df <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$tHDR_lib_pseudo_freq > 10^-4 & Xr_all_tHDR_pos_merge_master_df$r2_pre_freq >= 0.00001 & Xr_all_tHDR_pos_merge_master_df$hdr_cut =='yes'),]
+
+#high sequencing error contribution -- average of two replicates must be > 0.5 in cSNV context
+length(which((Xr_all_tHDR_pos_merge_master_df$corr_pre_pseudo/Xr_all_tHDR_pos_merge_master_df$pre_pseudo + Xr_all_tHDR_pos_merge_master_df$r2_corr_pre_pseudo/Xr_all_tHDR_pos_merge_master_df$r2_pre_pseudo)/2 <0.5))
+#which points are poorly represented in cSNV context compared to potential seq error? not worth using!
+Xr_all_filter_lib_hdr_cut_error_df <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$tHDR_lib_pseudo_freq > 10^-4 & Xr_all_tHDR_pos_merge_master_df$r2_pre_freq >= 0.00001 & Xr_all_tHDR_pos_merge_master_df$hdr_cut =='yes' & (Xr_all_tHDR_pos_merge_master_df$corr_pre_pseudo/Xr_all_tHDR_pos_merge_master_df$pre_pseudo + Xr_all_tHDR_pos_merge_master_df$r2_corr_pre_pseudo/Xr_all_tHDR_pos_merge_master_df$r2_pre_pseudo)/2 <0.5),]
+
+Xr_all_filter_lib_hdr_cut_df <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$tHDR_lib_pseudo_freq > 10^-4 & Xr_all_tHDR_pos_merge_master_df$r2_pre_freq >= 0.00001 & Xr_all_tHDR_pos_merge_master_df$hdr_cut =='yes'),]
+
+#created a new column pasting the pos and alt rows together above -- all of these were manually identified as outliers in the pre/lib loess.2-adjsuted tHDR mean values.
+#list of NCGG variants at cut PAMs by pos_alt:
+exclude_NCGG_active <- c('41256887C','41222959G','41209124C','41199701C','41197789C')
+#list of NCGG PAMs 
+exclude_NCGG_all <- c('41256887C','41222959G','41209124C','41199701C','41197789C','41267771G','41215385G','41203121C','41201202C')
+#list of NXG variants at cut PAMs (already exlcuded by requirement of prox pam present):
+exclude_NXG_all <- c('41276039A','41267769A','41267769T','41222957A','41222957T','41215383A','41215383T','41209126T','41209126A','41203123T','41203123A','41201204A','41201204T','41199703T','41199703A','41197791T','41197791A')
+#list of X5 NAG variants at cut PAM and PAM+1 variants (poor fit):
+exclude_X5_PAM <- c('41256890G','41256890C','41256890T','41256887C','41256887G','41256887A')
+#list of other variants near cut site depleted heavily, including X2 pam, and X16 ps var's.
+exclude_other_ps_pam <- c('41276038A','41219672G')
+#fall substantially above:
+length(which(Xr_all_tHDR_pos_merge_master_df$r1r2_tHDR_pre_lib_loess_r1r2 > 1))
+exclude_high_pre_lib <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$r1r2_tHDR_pre_lib_loess_r1r2 > 1),c('pos_alt')]
+Xr_all_exclude_list <- c(exclude_NCGG_all,exclude_NXG_all,exclude_X5_PAM,exclude_other_ps_pam,exclude_high_pre_lib)
+#only removing re-editing outliers and inflated pre/lib's
+Xr_all_tHDR_pos_merge_exclude <- Xr_all_tHDR_pos_merge_master_df[! Xr_all_tHDR_pos_merge_master_df$pos_alt %in% Xr_all_exclude_list,]
+
+#removing all points flagged.
+Xr_all_tHDR_pos_merge_all_filters <- Xr_all_filter_lib_hdr_cut_df[! Xr_all_filter_lib_hdr_cut_df$pos_alt %in% Xr_all_exclude_list,]
+
+#filtered sets compared to full set: Xr_all_tHDR_pos_merge_all_filters
+
+#testing which points are drastically different between pre/lib+post/pre and post/lib:
+#does post/lib give a different result than pre/lib+post/pre (labelled with exon)
+
+#unfiltered vs. CADD:
+cor(log2(Xr_all_tHDR_pos_merge_master_df_CADD$tHDR_post_pre_ratio_r1r2_mean_synnorm) + Xr_all_tHDR_pos_merge_master_df_CADD$r1r2_tHDR_pre_lib_loess_r1r2,as.numeric(as.character(Xr_all_tHDR_pos_merge_master_df_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_tHDR_pos_merge_master_df_CADD$r1r2_tHDR_post_lib_loess_r1r2,as.numeric(as.character(Xr_all_tHDR_pos_merge_master_df_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_tHDR_pos_merge_master_df_CADD$r_tHDR_post_lib_loess_e.sns_r1r2_mean,as.numeric(as.character(Xr_all_tHDR_pos_merge_master_df_CADD$CADD.phred)),method='spearman')
+#filtered vs. CADD (very slight improvement)
+cor(log2(Xr_all_tHDR_pos_merge_all_filters_CADD$tHDR_post_pre_ratio_r1r2_mean_synnorm) + Xr_all_tHDR_pos_merge_all_filters_CADD$r1r2_tHDR_pre_lib_loess_r1r2,as.numeric(as.character(Xr_all_tHDR_pos_merge_all_filters_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_tHDR_pos_merge_all_filters_CADD$r1r2_tHDR_post_lib_loess_r1r2,as.numeric(as.character(Xr_all_tHDR_pos_merge_all_filters_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_tHDR_pos_merge_all_filters_CADD$r_tHDR_post_lib_loess_e.sns_r1r2_mean,as.numeric(as.character(Xr_all_tHDR_pos_merge_all_filters_CADD$CADD.phred)),method='spearman')
+
+#RNA analysis (excluding exon 18 for now):
+Xr_all_tHDR_pos_merge_all_filters_rna_syn <- Xr_all_tHDR_pos_merge_all_filters[which((Xr_all_tHDR_pos_merge_all_filters$conseq == 'SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$c_hdr_snv == 'True' & Xr_all_tHDR_pos_merge_all_filters$exon != 'X18' ) | (Xr_all_tHDR_pos_merge_all_filters$conseq == 'SPLICE_SITE' & Xr_all_tHDR_pos_merge_all_filters$c_hdr_snv == 'True' & Xr_all_tHDR_pos_merge_all_filters$CDSpos != 'NA'& Xr_all_tHDR_pos_merge_all_filters$exon != 'X18')),]  
+
+#missense and syn
+Xr_all_tHDR_pos_merge_all_filters_rna_syn_mis_spl <- Xr_all_tHDR_pos_merge_all_filters[which((Xr_all_tHDR_pos_merge_all_filters$conseq == 'SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$c_hdr_snv == 'True' & Xr_all_tHDR_pos_merge_all_filters$exon != 'X18') | (Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$c_hdr_snv == 'True' & Xr_all_tHDR_pos_merge_all_filters$exon != 'X18') | (Xr_all_tHDR_pos_merge_all_filters$conseq == 'SPLICE_SITE' & Xr_all_tHDR_pos_merge_all_filters$c_hdr_snv == 'True' & Xr_all_tHDR_pos_merge_all_filters$CDSpos != 'NA' & Xr_all_tHDR_pos_merge_all_filters$exon != 'X18')),]  
+
+RNA_intervals <- seq(-5,2,length.out=71)
+LOF_SNV_fractions <- c()
+SNVs_below_RNA_thresh_count <- c()
+for (x in RNA_intervals){
+  snvs_below <- which(log2(Xr_all_tHDR_pos_merge_all_filters_rna_syn_mis_spl$tHDR_rna_pre_ratio_r1r2_mean_synnorm) <= x)
+  count_snvs_below <- length(snvs_below)
+  SNVs_below_RNA_thresh_count <- append(SNVs_below_RNA_thresh_count,count_snvs_below)
+  low_fit_count <- length(which(Xr_all_tHDR_pos_merge_all_filters_rna_syn_mis_spl[snvs_below,'r_tHDR_post_lib_loess_e.sns_r1r2_mean'] <= -1.25)) #threshold for fitness arbitrarily set here as rough bimodal point
+  LOF_SNV_fractions <- append(LOF_SNV_fractions,low_fit_count/count_snvs_below)
+}
+rna_fitness_df <- data.frame(fraction_snvs_LOF = LOF_SNV_fractions, log2_rna_expression_threshold = RNA_intervals, snvs_below_RNA_thresh = SNVs_below_RNA_thresh_count)
+#plot showing percent SNVs tolerated below given RNA level
+
+#filters on new filtered data:
+Xr_all_tHDR_pos_merge_all_filters_missynstop <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='NON_SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='STOP_GAINED' ),]
+
+Xr_all_tHDR_pos_merge_all_filters_missynstopcs <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='NON_SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='STOP_GAINED' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='CANONICAL_SPLICE' ),]
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstop <- Xr_all_tHDR_pos_merge_all_filters_missynstop
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstop$conseq <- factor(conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstop$conseq, levels = c('STOP_GAINED','SYNONYMOUS','NON_SYNONYMOUS'))
+
+
+
+Xr_all_tHDR_pos_merge_all_filters_missynstopcs <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='NON_SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='STOP_GAINED' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='CANONICAL_SPLICE' ),]
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcs <- Xr_all_tHDR_pos_merge_all_filters_missynstopcs
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcs$conseq <- factor(conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcs$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','NON_SYNONYMOUS'))
+
+
+
+Xr_all_tHDR_pos_merge_all_filters_missynstopcsint <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='NON_SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='STOP_GAINED' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='CANONICAL_SPLICE' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='INTRONIC' ),]
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsint <- Xr_all_tHDR_pos_merge_all_filters_missynstopcsint
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsint$conseq <- factor(conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsint$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','INTRONIC','NON_SYNONYMOUS'))
+
+
+
+Xr_all_tHDR_pos_merge_all_filters_missynstopcsintspl <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='NON_SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SYNONYMOUS' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='STOP_GAINED' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='CANONICAL_SPLICE' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='INTRONIC' | Xr_all_tHDR_pos_merge_all_filters[,'conseq']=='SPLICE_SITE' ),]
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsintspl <- Xr_all_tHDR_pos_merge_all_filters_missynstopcsintspl
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsintspl$conseq <- factor(conseq_ord_Xr_all_tHDR_pos_merge_all_filters_missynstopcsintspl$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','INTRONIC','SPLICE_SITE','NON_SYNONYMOUS'))
+
+
+
+
+
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters <- Xr_all_tHDR_pos_merge_all_filters
+conseq_ord_Xr_all_tHDR_pos_merge_all_filters$conseq <- factor(conseq_ord_Xr_all_tHDR_pos_merge_all_filters$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','INTRONIC','SPLICE_SITE','5PRIME_UTR','NON_SYNONYMOUS'))
+
+
+
+
+#comparison of different enrichment score metrics across all exons:
+
+
+Xr_all_tHDR_pos_merge_all_filters_mis_clinvar_p_b <- Xr_all_tHDR_pos_merge_all_filters[which((Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Pathogenic') | (Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Benign')),]  
+
+
+
+
+Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b <- Xr_all_tHDR_pos_merge_all_filters[which( Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Pathogenic' | Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Benign'),] 
+
+
+Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b_lp_lb <- Xr_all_tHDR_pos_merge_all_filters[which( Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Pathogenic' | Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS' & Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Benign' | Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Likely pathogenic' | Xr_all_tHDR_pos_merge_all_filters$clinvar_simple == 'Likely benign'),]  
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b_lp_lb <- Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b_lp_lb
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b_lp_lb$clinvar_simple <- factor(clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_clinvar_p_b_lp_lb$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+
+
+
+#all missense variants ordered by clinvar
+Xr_all_tHDR_pos_merge_all_filters_mis <- Xr_all_tHDR_pos_merge_all_filters[which((Xr_all_tHDR_pos_merge_all_filters$conseq == 'NON_SYNONYMOUS')),]  
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_mis <- Xr_all_tHDR_pos_merge_all_filters_mis
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_mis$clinvar_simple <- factor(clinvar_ord_Xr_all_tHDR_pos_merge_all_filters_mis$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+
+#all variants ordered by ClinVar annotation
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters <- Xr_all_tHDR_pos_merge_all_filters
+clinvar_ord_Xr_all_tHDR_pos_merge_all_filters$clinvar_simple <- factor(clinvar_ord_Xr_all_tHDR_pos_merge_all_filters$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+
+
+##NEED TO FILTER THESE CALL SETS IN FINAL ANALYSIS BASED ON GLOBAL FILTERS ABOVE, and perform global min/max normalization and scale each exon by median nonsense depletion across all.
+X2r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X2'),]
+X3r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X3'),]
+X4r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X4'),]
+X5r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X5'),]
+X15r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X15'),]
+X16r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X16'),]
+X17r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X17'),]
+X18r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X18'),]
+X19r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X19'),]
+X20r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X20'),]
+X21r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X21'),]
+X22r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X22'),]
+X23r_final_df <- Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$exon == 'X23'),]
+
+X2r_final_exon_df <- X2r_final_df[which(X2r_final_df[,'cDNApos'] !='REF' & X2r_final_df[,'cDNApos']!='NA'),]
+X3r_final_exon_df <- X3r_final_df[which(X3r_final_df[,'cDNApos'] !='REF' & X3r_final_df[,'cDNApos']!='NA'),]
+X4r_final_exon_df <- X4r_final_df[which(X4r_final_df[,'cDNApos'] !='REF' & X4r_final_df[,'cDNApos']!='NA'),]
+X5r_final_exon_df <- X5r_final_df[which(X5r_final_df[,'cDNApos'] !='REF' & X5r_final_df[,'cDNApos']!='NA'),]
+X15r_final_exon_df <- X15r_final_df[which(X15r_final_df[,'cDNApos'] !='REF' & X15r_final_df[,'cDNApos']!='NA'),]
+X16r_final_exon_df <- X16r_final_df[which(X16r_final_df[,'cDNApos'] !='REF' & X16r_final_df[,'cDNApos']!='NA'),]
+X17r_final_exon_df <- X17r_final_df[which(X17r_final_df[,'cDNApos'] !='REF' & X17r_final_df[,'cDNApos']!='NA'),]
+X18r_final_exon_df <- X18r_final_df[which(X18r_final_df[,'cDNApos'] !='REF' & X18r_final_df[,'cDNApos']!='NA'),]
+X19r_final_exon_df <- X19r_final_df[which(X19r_final_df[,'cDNApos'] !='REF' & X19r_final_df[,'cDNApos']!='NA'),]
+X20r_final_exon_df <- X20r_final_df[which(X20r_final_df[,'cDNApos'] !='REF' & X20r_final_df[,'cDNApos']!='NA'),]
+X21r_final_exon_df <- X21r_final_df[which(X21r_final_df[,'cDNApos'] !='REF' & X21r_final_df[,'cDNApos']!='NA'),]
+X22r_final_exon_df <- X22r_final_df[which(X22r_final_df[,'cDNApos'] !='REF' & X22r_final_df[,'cDNApos']!='NA'),]
+X23r_final_exon_df <- X23r_final_df[which(X23r_final_df[,'cDNApos'] !='REF' & X23r_final_df[,'cDNApos']!='NA'),]
+
+#plots for RNA analysis!
+require(gridExtra)
+
+#X2
+
+
+#same plots with cDNA position instead of CDSpos
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+#which correlates best to pre-ratios?
+cor(log2(X2r_final_exon_df$tHDR_pre_pseudo_freq),log2(X2r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X2r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X2r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X2r_final_exon_df$tHDR_pre_pseudo_freq/2+X2r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X2r_final_exon_df$tHDR_rna_pseudo_freq/2+X2r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X3
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X3r_final_exon_df$tHDR_pre_pseudo_freq),log2(X3r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X3r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X3r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X3r_final_exon_df$tHDR_pre_pseudo_freq/2+X3r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X3r_final_exon_df$tHDR_rna_pseudo_freq/2+X3r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X4
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X4r_final_exon_df$tHDR_pre_pseudo_freq),log2(X4r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X4r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X4r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X4r_final_exon_df$tHDR_pre_pseudo_freq/2+X4r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X4r_final_exon_df$tHDR_rna_pseudo_freq/2+X4r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X5
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X5r_final_exon_df$tHDR_pre_pseudo_freq),log2(X5r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X5r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X5r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X5r_final_exon_df$tHDR_pre_pseudo_freq/2+X5r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X5r_final_exon_df$tHDR_rna_pseudo_freq/2+X5r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X15
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X15r_final_exon_df$tHDR_pre_pseudo_freq),log2(X15r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X15r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X15r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X15r_final_exon_df$tHDR_pre_pseudo_freq/2+X15r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X15r_final_exon_df$tHDR_rna_pseudo_freq/2+X15r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X16
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X16r_final_exon_df$tHDR_pre_pseudo_freq),log2(X16r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X16r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X16r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X16r_final_exon_df$tHDR_pre_pseudo_freq/2+X16r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X16r_final_exon_df$tHDR_rna_pseudo_freq/2+X16r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X17
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X17r_final_exon_df$tHDR_pre_pseudo_freq),log2(X17r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X17r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X17r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X17r_final_exon_df$tHDR_pre_pseudo_freq/2+X17r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X17r_final_exon_df$tHDR_rna_pseudo_freq/2+X17r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X18
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X18r_final_exon_df$tHDR_pre_pseudo_freq),log2(X18r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X18r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X18r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X18r_final_exon_df$tHDR_pre_pseudo_freq/2+X18r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X18r_final_exon_df$tHDR_rna_pseudo_freq/2+X18r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X19
+#modified code to scale limits -- excludes the PAM points
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X19r_final_exon_df$tHDR_pre_pseudo_freq),log2(X19r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X19r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X19r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X19r_final_exon_df$tHDR_pre_pseudo_freq/2+X19r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X19r_final_exon_df$tHDR_rna_pseudo_freq/2+X19r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X20
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X20r_final_exon_df$tHDR_pre_pseudo_freq),log2(X20r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X20r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X20r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X20r_final_exon_df$tHDR_pre_pseudo_freq/2+X20r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X20r_final_exon_df$tHDR_rna_pseudo_freq/2+X20r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X21
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X21r_final_exon_df$tHDR_pre_pseudo_freq),log2(X21r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X21r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X21r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X21r_final_exon_df$tHDR_pre_pseudo_freq/2+X21r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X21r_final_exon_df$tHDR_rna_pseudo_freq/2+X21r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X22
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X22r_final_exon_df$tHDR_pre_pseudo_freq),log2(X22r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X22r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X22r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X22r_final_exon_df$tHDR_pre_pseudo_freq/2+X22r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X22r_final_exon_df$tHDR_rna_pseudo_freq/2+X22r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+
+#X23
+
+
+#rna_pre ratio across replicates:
+#rna vs. pre by replicate, r1
+#rna vs. pre by replicate, r2
+#average rna vs. average pre
+
+#which correlates best to pre-ratios?
+cor(log2(X23r_final_exon_df$tHDR_pre_pseudo_freq),log2(X23r_final_exon_df$tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X23r_final_exon_df$r2_tHDR_pre_pseudo_freq),log2(X23r_final_exon_df$r2_tHDR_rna_pseudo_freq),method='spearman')
+cor(log2(X23r_final_exon_df$tHDR_pre_pseudo_freq/2+X23r_final_exon_df$r2_tHDR_pre_pseudo_freq/2),log2(X23r_final_exon_df$tHDR_rna_pseudo_freq/2+X23r_final_exon_df$r2_tHDR_rna_pseudo_freq/2),method='spearman')
+### end of RNA section
+
+# add a new column to:
+#compute the exonic position of each variant (make a string with negative or positive annotation instead of NA --> will have to order this to be able to plot (plot one order, and then add vector of strings for labels, maybe?)
+# clinvar nucleotide positions / other categorical translations between data sets...
+# conseq without 'splice' but either exonic or intronic
+
+#FINAL NORMALIZATION SECTION (SHOULD COME BEFORE RNA PLOTS above)
+# min/max normalization on filtered data...
+#use conseq or conseq_simp to not include splice?
+
+#general formula:  b/(a-c)*(A-C) where b is snv, a is exon med syn, c is exon med nonsense, A is global med syn, C is global med nonsense.
+
+#do this first for the repl. mean fits and scores :
+Xr_all_tHDR_post_lib_loess_r1r2_median_syn <- median(Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+
+Xr_all_tHDR_post_lib_loess_r1r2_median_ns <- median(Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+
+X2_tHDR_post_lib_loess_r1r2_median_syn <- median(X2r_final_df[which(X2r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X2_tHDR_post_lib_loess_r1r2_median_ns <- median(X2r_final_df[which(X2r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X2r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X2r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X2_tHDR_post_lib_loess_r1r2_median_syn-X2_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X3_tHDR_post_lib_loess_r1r2_median_syn <- median(X3r_final_df[which(X3r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X3_tHDR_post_lib_loess_r1r2_median_ns <- median(X3r_final_df[which(X3r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X3r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X3r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X3_tHDR_post_lib_loess_r1r2_median_syn-X3_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X4_tHDR_post_lib_loess_r1r2_median_syn <- median(X4r_final_df[which(X4r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X4_tHDR_post_lib_loess_r1r2_median_ns <- median(X4r_final_df[which(X4r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X4r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X4r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X4_tHDR_post_lib_loess_r1r2_median_syn-X4_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X5_tHDR_post_lib_loess_r1r2_median_syn <- median(X5r_final_df[which(X5r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X5_tHDR_post_lib_loess_r1r2_median_ns <- median(X5r_final_df[which(X5r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X5r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X5r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X5_tHDR_post_lib_loess_r1r2_median_syn-X5_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X15_tHDR_post_lib_loess_r1r2_median_syn <- median(X15r_final_df[which(X15r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X15_tHDR_post_lib_loess_r1r2_median_ns <- median(X15r_final_df[which(X15r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X15r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X15r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X15_tHDR_post_lib_loess_r1r2_median_syn-X15_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X16_tHDR_post_lib_loess_r1r2_median_syn <- median(X16r_final_df[which(X16r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X16_tHDR_post_lib_loess_r1r2_median_ns <- median(X16r_final_df[which(X16r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X16r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X16r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X16_tHDR_post_lib_loess_r1r2_median_syn-X16_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X17_tHDR_post_lib_loess_r1r2_median_syn <- median(X17r_final_df[which(X17r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X17_tHDR_post_lib_loess_r1r2_median_ns <- median(X17r_final_df[which(X17r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X17r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X17r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X17_tHDR_post_lib_loess_r1r2_median_syn-X17_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X18_tHDR_post_lib_loess_r1r2_median_syn <- median(X18r_final_df[which(X18r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X18_tHDR_post_lib_loess_r1r2_median_ns <- median(X18r_final_df[which(X18r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X18r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X18r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X18_tHDR_post_lib_loess_r1r2_median_syn-X18_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X19_tHDR_post_lib_loess_r1r2_median_syn <- median(X19r_final_df[which(X19r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X19_tHDR_post_lib_loess_r1r2_median_ns <- median(X19r_final_df[which(X19r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X19r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X19r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X19_tHDR_post_lib_loess_r1r2_median_syn-X19_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X20_tHDR_post_lib_loess_r1r2_median_syn <- median(X20r_final_df[which(X20r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X20_tHDR_post_lib_loess_r1r2_median_ns <- median(X20r_final_df[which(X20r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X20r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X20r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X20_tHDR_post_lib_loess_r1r2_median_syn-X20_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X21_tHDR_post_lib_loess_r1r2_median_syn <- median(X21r_final_df[which(X21r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X21_tHDR_post_lib_loess_r1r2_median_ns <- median(X21r_final_df[which(X21r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X21r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X21r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X21_tHDR_post_lib_loess_r1r2_median_syn-X21_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X22_tHDR_post_lib_loess_r1r2_median_syn <- median(X22r_final_df[which(X22r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X22_tHDR_post_lib_loess_r1r2_median_ns <- median(X22r_final_df[which(X22r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X22r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X22r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X22_tHDR_post_lib_loess_r1r2_median_syn-X22_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+X23_tHDR_post_lib_loess_r1r2_median_syn <- median(X23r_final_df[which(X23r_final_df$conseq == 'SYNONYMOUS'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X23_tHDR_post_lib_loess_r1r2_median_ns <- median(X23r_final_df[which(X23r_final_df$conseq == 'STOP_GAINED'),c('r1r2_tHDR_post_lib_loess_r1r2')])
+X23r_final_df$tHDR_post_lib_loess_r1r2_sns_norm <- (X23r_final_df$r1r2_tHDR_post_lib_loess_r1r2/(X23_tHDR_post_lib_loess_r1r2_median_syn-X23_tHDR_post_lib_loess_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_r1r2_median_ns)
+
+#repeat the above for the e.sns replicate means... what does this look like keeping the replicate normalized scored separate?
+
+Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(Xr_all_tHDR_pos_merge_all_filters[which(Xr_all_tHDR_pos_merge_all_filters$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+
+X2_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X2r_final_df[which(X2r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X2_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X2r_final_df[which(X2r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X2r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X2r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X2_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X2_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X3_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X3r_final_df[which(X3r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X3_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X3r_final_df[which(X3r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X3r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X3r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X3_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X3_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X4_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X4r_final_df[which(X4r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X4_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X4r_final_df[which(X4r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X4r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X4r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X4_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X4_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X5_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X5r_final_df[which(X5r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X5_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X5r_final_df[which(X5r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X5r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X5r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X5_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X5_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X15_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X15r_final_df[which(X15r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X15_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X15r_final_df[which(X15r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X15r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X15r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X15_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X15_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X16_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X16r_final_df[which(X16r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X16_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X16r_final_df[which(X16r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X16r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X16r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X16_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X16_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X17_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X17r_final_df[which(X17r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X17_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X17r_final_df[which(X17r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X17r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X17r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X17_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X17_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X18_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X18r_final_df[which(X18r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X18_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X18r_final_df[which(X18r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X18r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X18r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X18_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X18_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X19_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X19r_final_df[which(X19r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X19_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X19r_final_df[which(X19r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X19r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X19r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X19_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X19_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X20_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X20r_final_df[which(X20r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X20_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X20r_final_df[which(X20r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X20r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X20r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X20_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X20_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X21_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X21r_final_df[which(X21r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X21_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X21r_final_df[which(X21r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X21r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X21r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X21_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X21_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X22_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X22r_final_df[which(X22r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X22_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X22r_final_df[which(X22r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X22r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X22r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X22_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X22_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X23_tHDR_post_lib_loess_e.sns_r1r2_median_syn <- median(X23r_final_df[which(X23r_final_df$conseq == 'SYNONYMOUS'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X23_tHDR_post_lib_loess_e.sns_r1r2_median_ns <- median(X23r_final_df[which(X23r_final_df$conseq == 'STOP_GAINED'),c('r_tHDR_post_lib_loess_e.sns_r1r2_mean')])
+X23r_final_df$tHDR_post_lib_loess_e.sns_r1r2_sns_norm <- (X23r_final_df$r_tHDR_post_lib_loess_e.sns_r1r2_mean/(X23_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X23_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+#make the same calculations on a per replicate score basis...:
+#keeping all scalers as medians of replicate averages (i.e. global syn/ns and per exon syn/ns will be called from medians, but )
+X2r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X2r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X2_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X2_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X2r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X2r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X2_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X2_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X3r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X3r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X3_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X3_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X3r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X3r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X3_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X3_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X4r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X4r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X4_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X4_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X4r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X4r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X4_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X4_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X5r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X5r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X5_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X5_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X5r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X5r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X5_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X5_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X15r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X15r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X15_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X15_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X15r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X15r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X15_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X15_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X16r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X16r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X16_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X16_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X16r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X16r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X16_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X16_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X17r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X17r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X17_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X17_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X17r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X17r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X17_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X17_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X18r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X18r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X18_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X18_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X18r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X18r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X18_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X18_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X19r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X19r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X19_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X19_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X19r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X19r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X19_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X19_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X20r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X20r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X20_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X20_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X20r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X20r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X20_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X20_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X21r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X21r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X21_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X21_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X21r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X21r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X21_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X21_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X22r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X22r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X22_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X22_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X22r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X22r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X22_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X22_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+X23r_final_df$tHDR_post_lib_loess_e.sns_r1_sns_norm <- (X23r_final_df$r1_tHDR_post_lib_loess_r1_e.sns/(X23_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X23_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+X23r_final_df$tHDR_post_lib_loess_e.sns_r2_sns_norm <- (X23r_final_df$r2_tHDR_post_lib_loess_r2_e.sns/(X23_tHDR_post_lib_loess_e.sns_r1r2_median_syn-X23_tHDR_post_lib_loess_e.sns_r1r2_median_ns))*(Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_syn-Xr_all_tHDR_post_lib_loess_e.sns_r1r2_median_ns)
+
+#binding all of the sns-normalized df's together...
+#this data frame has been variant filtered and then normalized!!!
+Xr_all_final_sns_norm <- rbind(X2r_final_df,X3r_final_df,X4r_final_df,X5r_final_df,X15r_final_df,X16r_final_df,X17r_final_df,X18r_final_df,X19r_final_df,X20r_final_df,X21r_final_df,X22r_final_df,X23r_final_df)
+### calculate replicate dependent post-pre + lo.e.sns pre-lib scores for all points
+#calculate a post-pre + pre-lib metric per replicate and compare to replicate reproducibility with other functional scores
+Xr_all_final_sns_norm$r1_tHDR_pre_lib_lo_plus_post_pre <- Xr_all_final_sns_norm$r1_tHDR_pre_lib_loess_r1+log2(Xr_all_final_sns_norm$tHDR_post_pre_ratio_synnorm)
+Xr_all_final_sns_norm$r2_tHDR_pre_lib_lo_plus_post_pre <- Xr_all_final_sns_norm$r2_tHDR_pre_lib_loess_r1+log2(Xr_all_final_sns_norm$r2_tHDR_post_pre_ratio_synnorm)
+Xr_all_final_sns_norm$tHDR_pre_lib_lo_plus_post_pre_r1r2_mean <- (Xr_all_final_sns_norm$r2_tHDR_pre_lib_lo_plus_post_pre+Xr_all_final_sns_norm$r1_tHDR_pre_lib_lo_plus_post_pre)/2
+#weighted by pre reads...
+Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2w_sns_norm <- Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm*Xr_all_final_sns_norm$tHDR_pre_weight + Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm*Xr_all_final_sns_norm$r2_tHDR_pre_weight
+
+#write this out:
+write.table(Xr_all_final_sns_norm, "/mount/SGE/BRCA1/Xr_all_final_sns_norm_20171016.txt", sep="\t")
+
+#####update line 
+####
+###
+##
+
+#global analysis again with normalized scores:
+#filters on new filtered data:
+#three scoring metrics to compare: tHDR_post_lib_loess_r1r2_sns_norm , tHDR_post_lib_loess_e.sns_r1r2_sns_norm, tHDR_post_lib_loess_e.sns_r1r2w_sns_norm
+#two replicate metrics to compare:  r1_tHDR_post_lib_loess_r1_e.sns, r2_tHDR_post_lib_loess_r2_e.sns
+
+Xr_all_final_sns_norm_missynstop <- Xr_all_final_sns_norm[which(Xr_all_final_sns_norm[,'conseq']=='NON_SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='STOP_GAINED' ),]
+Xr_all_final_sns_norm_missynstopcs <- Xr_all_final_sns_norm[which(Xr_all_final_sns_norm[,'conseq']=='NON_SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='STOP_GAINED' | Xr_all_final_sns_norm[,'conseq']=='CANONICAL_SPLICE' ),]
+
+conseq_ord_Xr_all_final_sns_norm_missynstop <- Xr_all_final_sns_norm_missynstop
+
+conseq_ord_Xr_all_final_sns_norm_missynstop$conseq <- factor(conseq_ord_Xr_all_final_sns_norm_missynstop$conseq, levels = c('STOP_GAINED','SYNONYMOUS','NON_SYNONYMOUS'))
+
+
+Xr_all_final_sns_norm_missynstopcs <- Xr_all_final_sns_norm[which(Xr_all_final_sns_norm[,'conseq']=='NON_SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='SYNONYMOUS' | Xr_all_final_sns_norm[,'conseq']=='STOP_GAINED' | Xr_all_final_sns_norm[,'conseq']=='CANONICAL_SPLICE' ),]
+conseq_ord_Xr_all_final_sns_norm_missynstopcs <- Xr_all_final_sns_norm_missynstopcs
+conseq_ord_Xr_all_final_sns_norm_missynstopcs$conseq <- factor(conseq_ord_Xr_all_final_sns_norm_missynstopcs$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','NON_SYNONYMOUS'))
+
+
+conseq_ord_Xr_all_final_sns_norm <- Xr_all_final_sns_norm
+conseq_ord_Xr_all_final_sns_norm$conseq <- factor(conseq_ord_Xr_all_final_sns_norm$conseq, levels = c('STOP_GAINED','CANONICAL_SPLICE','SYNONYMOUS','INTRONIC','SPLICE_SITE','5PRIME_UTR','NON_SYNONYMOUS'))
+
+#all scoring metrics compared...
+
+
+
+
+
+
+Xr_all_final_sns_norm_mis_clinvar_p_b <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS' & Xr_all_final_sns_norm$clinvar_simple == 'Pathogenic') | (Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS' & Xr_all_final_sns_norm$clinvar_simple == 'Benign')),]  
+
+
+
+
+Xr_all_final_sns_norm_clinvar_p_b <- Xr_all_final_sns_norm[which( Xr_all_final_sns_norm$clinvar_simple == 'Pathogenic' | Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS' & Xr_all_final_sns_norm$clinvar_simple == 'Benign'),]  
+
+
+
+Xr_all_final_sns_norm_clinvar_p_b_lp_lb <- Xr_all_final_sns_norm[which( Xr_all_final_sns_norm$clinvar_simple == 'Pathogenic' | Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS' & Xr_all_final_sns_norm$clinvar_simple == 'Benign' | Xr_all_final_sns_norm$clinvar_simple == 'Likely pathogenic' | Xr_all_final_sns_norm$clinvar_simple == 'Likely benign'),]  
+clinvar_ord_Xr_all_final_sns_norm_clinvar_p_b_lp_lb <- Xr_all_final_sns_norm_clinvar_p_b_lp_lb
+clinvar_ord_Xr_all_final_sns_norm_clinvar_p_b_lp_lb$clinvar_simple <- factor(clinvar_ord_Xr_all_final_sns_norm_clinvar_p_b_lp_lb$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+#with colored boundaries for conseq
+
+#without colored boundaries for conseq
+
+
+#all missense variants ordered by clinvar
+Xr_all_final_sns_norm_mis <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS')),]  
+clinvar_ord_Xr_all_final_sns_norm_mis <- Xr_all_final_sns_norm_mis
+clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple <- factor(clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+
+
+#clinvar_ord_Xr_all_final_sns_norm_mis filtered on p/lp b/lb
+clinvar_ord_Xr_all_final_sns_norm_mis_p_b_lp_lb <- clinvar_ord_Xr_all_final_sns_norm_mis[which( clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple == 'Pathogenic' | clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple == 'Benign' | clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple == 'Likely pathogenic' | clinvar_ord_Xr_all_final_sns_norm_mis$clinvar_simple == 'Likely benign'),]
+
+#only missense
+
+#all variants ordered by ClinVar annotation
+clinvar_ord_Xr_all_final_sns_norm <- Xr_all_final_sns_norm
+clinvar_ord_Xr_all_final_sns_norm$clinvar_simple <- factor(clinvar_ord_Xr_all_final_sns_norm$clinvar_simple, levels = c("Pathogenic","Likely pathogenic","Likely benign","Benign","Uncertain significance","Conflicting interpretations of pathogenicity","absent","REF"))
+
+
+#isolate all synonymous and missense variants and test how rna_pre_ratio correlates with survival (c_hdr_snv only, so RNA levels can be detected.
+#only syn
+Xr_all_final_sns_norm_syn <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'SYNONYMOUS' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$exon != 'X18') | (Xr_all_final_sns_norm$conseq == 'SPLICE_SITE' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$CDSpos != 'NA' & Xr_all_final_sns_norm$exon != 'X18')),]
+
+Xr_all_final_sns_norm_ns <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'STOP_GAINED' & Xr_all_final_sns_norm$c_hdr_snv == 'True')),]
+Xr_all_final_sns_norm_ns_no18 <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'STOP_GAINED' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$exon != 'X18')),]
+
+
+
+#log2 median and sd for rna ratios
+Xr_all_final_sns_norm_syn_rna_median <- median(log2(Xr_all_final_sns_norm_syn$tHDR_rna_pre_ratio_r1r2_mean_synnorm))
+Xr_all_final_sns_norm_syn_rna_sd <- sd(log2(Xr_all_final_sns_norm_syn$tHDR_rna_pre_ratio_r1r2_mean_synnorm))
+#defined as being within 1 SD from median (log2 taken here to compare
+Xr_all_final_sns_norm_syn_norm_exp <- Xr_all_final_sns_norm_syn[which(Xr_all_final_sns_norm_syn_rna_median + Xr_all_final_sns_norm_syn_rna_sd >= log2(Xr_all_final_sns_norm_syn$tHDR_rna_pre_ratio_r1r2_mean_synnorm) & log2(Xr_all_final_sns_norm_syn$tHDR_rna_pre_ratio_r1r2_mean_synnorm) >= Xr_all_final_sns_norm_syn_rna_median-Xr_all_final_sns_norm_syn_rna_sd),]
+
+
+
+
+#with labels to understand outliers (post-lib discordancy label)... seems to be problem with one replicate's 'post' value?
+
+
+### global correlations for different scores, and global comparisons of 'final' scores
+### this is still a hanger on call to y=tHDR_post_lib_loess_e.sns_r1r2
+cor(Xr_all_final_sns_norm$tHDR_pre_lib_lo_plus_post_pre_r1r2_mean,Xr_all_final_sns_norm$r_tHDR_post_lib_loess_e.sns_r1r2_mean,method='spearman')
+
+cor(Xr_all_final_sns_norm$tHDR_pre_lib_lo_plus_post_pre_r1r2_mean,Xr_all_final_sns_norm$r1r2_tHDR_post_lib_loess_r1r2,method='spearman')
+
+cor(Xr_all_final_sns_norm$r_tHDR_post_lib_loess_e.sns_r1r2_mean,Xr_all_final_sns_norm$r1r2_tHDR_post_lib_loess_r1r2,method='spearman')
+
+#normalized scores (two different ways).
+cor(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,Xr_all_final_sns_norm$tHDR_post_lib_loess_r1r2_sns_norm,method='spearman')
+
+
+### global correlations with CADD to determine optimal 'fitness score' from these candidates
+#has annotation in CADD
+Xr_variants_with_CADD <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$CADD.phred != 'NA' & Xr_all_tHDR_pos_merge_master_df$CADD.phred != 'REF' ),c('pos_alt')]
+#filter Xr_all_final_sns_norm on CADD variants:
+Xr_all_final_sns_norm_CADD <- Xr_all_final_sns_norm[Xr_all_final_sns_norm$pos_alt %in% Xr_variants_with_CADD,]
+#compare correlations of top three metrics...
+cor(Xr_all_final_sns_norm_CADD$tHDR_post_lib_loess_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_final_sns_norm_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_final_sns_norm_CADD$r1r2_tHDR_post_lib_loess_r1r2,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_final_sns_norm_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_final_sns_norm_CADD$tHDR_post_lib_loess_e.sns_r1r2w_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+#individual scores vs. cadd scores
+cor(Xr_all_final_sns_norm_CADD$r1_tHDR_post_lib_loess_r1_e.sns,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+cor(Xr_all_final_sns_norm_CADD$r2_tHDR_post_lib_loess_r2_e.sns,as.numeric(as.character(Xr_all_final_sns_norm_CADD$CADD.phred)),method='spearman')
+
+### WORKING IN THESE UPDATES!
+### final filtering strategy to reduce discordant calls between replicates?
+### with remaining points, stats to get P-values
+### global QC correlations:
+#with labels to understand outliers (post-lib discordancy label)... seems to be problem with one replicate's 'post' value?
+
+#replicate discrepancy plot w/o labels:  which scoring system is more reproducible? about same
+#pre sns normalization across exons...
+cor(Xr_all_final_sns_norm$r1_tHDR_post_lib_loess_r1_e.sns,Xr_all_final_sns_norm$r2_tHDR_post_lib_loess_r2_e.sns,method='spearman')
+cor(Xr_all_final_sns_norm$r1_tHDR_pre_lib_lo_plus_post_pre,Xr_all_final_sns_norm$r2_tHDR_pre_lib_lo_plus_post_pre,method='spearman')
+
+#post sns normalization across exons...
+cor(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+
+#replicate discrepancy plot with labels:
+
+#fitness scores of SNVs with with normal expression
+
+#histogram comparing snv's with normal expression values and those with all expression
+
+mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+
+mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)-2*sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)+2*sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)-3*sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)+3*sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)
+
+
+#add nonsense variants:
+Xr_all_final_sns_norm_ns_syn_normex <- rbind(Xr_all_final_sns_norm_ns,Xr_all_final_sns_norm_syn_norm_exp)
+
+#three ways to compare functional / non-functional split, all similar:
+#it makes virtually no difference if this is weighted by 'r1 or r2 pre frequency'
+
+#missense and syn
+Xr_all_final_sns_norm_syn_mis_spl_noX18 <- Xr_all_final_sns_norm[which((Xr_all_final_sns_norm$conseq == 'SYNONYMOUS' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$exon != 'X18') | (Xr_all_final_sns_norm$conseq == 'NON_SYNONYMOUS' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$exon != 'X18') | (Xr_all_final_sns_norm$conseq == 'SPLICE_SITE' & Xr_all_final_sns_norm$c_hdr_snv == 'True' & Xr_all_final_sns_norm$CDSpos != 'NA' & Xr_all_final_sns_norm$exon != 'X18')),]  
+
+
+#### modeling section
+
+library(gam)
+#define 'lof' as a 1 or 0 based on nonsense SNVs / normal expression SYN SNVs.
+
+assign_lof <- function(conseq){
+  if (conseq == 'STOP_GAINED') return(1) else return(0)
+}
+
+Xr_all_final_sns_norm_ns_syn_normex_gam <- Xr_all_final_sns_norm_ns_syn_normex
+Xr_all_final_sns_norm_ns_syn_normex_gam$lof <- sapply(Xr_all_final_sns_norm_ns_syn_normex_gam$conseq,assign_lof)
+
+#modeling with GAM -- use interacting terms and make this better? risk of overfitting
+Xr_all_gam_out <- gam(lof ~ tHDR_post_lib_loess_e.sns_r1_sns_norm+tHDR_post_lib_loess_e.sns_r2_sns_norm, data = Xr_all_final_sns_norm_ns_syn_normex_gam, family = "binomial")
+Xr_all_gam_out$coefficients
+Xr_all_gam_pred <- predict(Xr_all_gam_out, newdata = Xr_all_final_sns_norm, se=TRUE)
+Xr_all_gam_pred$fit
+
+Xr_all_gam_out <- gam(lof ~ tHDR_post_lib_loess_e.sns_r1_sns_norm+tHDR_post_lib_loess_e.sns_r2_sns_norm, data = Xr_all_final_sns_norm_ns_syn_normex_gam, family = "binomial")
+Xr_all_gam_out$coefficients
+Xr_all_gam_pred <- predict(Xr_all_gam_out, newdata = Xr_all_final_sns_norm, se=TRUE)
+Xr_all_gam_pred$fit
+
+
+#MclustDA approach for Gaussian Mixture Modelling...
+#using class from above... LOF = 1, F = 0
+require(mclust)
+Xr_all_mclust.train <- MclustDA(data = Xr_all_final_sns_norm_ns_syn_normex_gam[,c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')], class = Xr_all_final_sns_norm_ns_syn_normex_gam$lof, G = 1, modelNames = c('V'))
+summary(Xr_all_mclust.train, parameters = TRUE)
+Xr_all_mclust_lof_out <- rep('all_snvs',dim(Xr_all_final_sns_norm)[1])
+summary(Xr_all_mclust.train, newdata = Xr_all_final_sns_norm[, c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')], newclass = Xr_all_mclust_lof_out)
+Xr_all_mclust.predict <- predict.MclustDA(Xr_all_mclust.train, newdata = Xr_all_final_sns_norm[, c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')], newclass = Xr_all_mclust_lof_out,prior = c(0.5,0.5))
+Xr_all_final_sns_norm$mclust_z_lof <- Xr_all_mclust.predict$z[,2]
+Xr_all_final_sns_norm$mclust_class_lof <- Xr_all_mclust.predict$classification
+
+
+max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 0),c('mclust_z_lof')])
+min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 0),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 1),c('mclust_z_lof')])
+max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 1),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+mclust_functional_thresh <- mean(c(min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 0),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')]),max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_class_lof == 1),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])))
+
+mclust_lof_95 <- max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_z_lof > 0.95),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+mclust_lof_99 <- max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_z_lof > 0.99),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+mclust_f_05 <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_z_lof < 0.05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+mclust_f_01 <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_z_lof < 0.01),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$mclust_z_lof < 0.001),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+#How do these compare to the threshold using normalmixEM?
+
+
+
+#frequentist, two normal distributions:
+#redo null distributions with this...
+#get all the P-values using syn_norm_exp 
+Xr_test_p_syn <- pnorm(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,mean = mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm), sd = sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm))
+#get all the P-values using ns
+Xr_test_p_ns <- pnorm(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,mean = mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm), sd = sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm), lower.tail = FALSE)
+Xr_ratio_ns_syn <- Xr_test_p_ns/Xr_test_p_syn
+Xr_log_ratio_ns_syn <- log10(Xr_ratio_ns_syn)
+
+Xr_all_final_sns_norm$Xr_test_p_syn <- Xr_test_p_syn
+Xr_all_final_sns_norm$Xr_test_p_ns <- Xr_test_p_ns
+Xr_all_final_sns_norm$Xr_ratio_ns_syn <- Xr_ratio_ns_syn
+Xr_all_final_sns_norm$Xr_log_ratio_ns_syn <- Xr_log_ratio_ns_syn
+Xr_all_final_sns_norm$Xr_bh_p_syn <- p.adjust(Xr_all_final_sns_norm$Xr_test_p_syn, method = 'BH')
+Xr_all_final_sns_norm$Xr_bh_p_ns <- p.adjust(Xr_all_final_sns_norm$Xr_test_p_ns, method = 'BH')
+
+#suggested thresholds...
+#uncorrected threshold for less than functional...
+max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_test_p_syn < 0.05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#corrected threshold for less than functional...
+Xr_bh_p_syn_max05 <- max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_syn < 0.05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_syn < 0.01),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+#uncorrected threshold for greater than nonsense...
+min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_test_p_ns < 0.05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#corrected threshold for greater than nonsense...
+Xr_bh_p_ns_min05 <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_ns < 0.05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_ns < 0.01),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+#calculate the 'inflection point' threshold in the data... where P(ns) and P(syn) are equal...
+#take the mean between the two points on either side of the threshold..
+Xr_bh_p_binary_cutoff <- mean(c(max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_ns > Xr_all_final_sns_norm$Xr_bh_p_syn),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')]),min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_bh_p_ns < Xr_all_final_sns_norm$Xr_bh_p_syn),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])))
+
+
+#order the dataframe in descending order by P(SYN)
+
+#histograms of training data and threshold for p-value FDR approach:
+
+
+#BAYSEIAN MODELING SECTION
+
+library(mixtools)
+
+##mixtools normalmixEM --> Basic fit on known distributions... re-try this using fixed
+ns_syn_normex_mm.opt <- normalmixEM(x = Xr_all_final_sns_norm_ns_syn_normex$tHDR_post_lib_loess_e.sns_r1r2_sns_norm, lambda = c(dim(Xr_all_final_sns_norm_syn_norm_exp)[1]/dim(Xr_all_final_sns_norm_ns_syn_normex)[1],dim(Xr_all_final_sns_norm_ns)[1]/dim(Xr_all_final_sns_norm_ns_syn_normex)[1]),mean.constr = c(mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm),mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)), sd.constr = c(sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm),sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)))
+ns_syn_normex_mm.opt$mu
+ns_syn_normex_mm.opt$sigma
+
+#try calling on the complete data set --> means and sds start at defined locations, then move.
+normalmixEM(x = Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm, mu = c(mean(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm),mean(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)),sigma = c(sd(Xr_all_final_sns_norm_syn_norm_exp$tHDR_post_lib_loess_e.sns_r1r2_sns_norm),sd(Xr_all_final_sns_norm_ns$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)),lambda = c(0.5,0.5))
+
+#try calling on the complete data set, using fixed mu and sigma...with lambda = c(0.5,0.5) (arbitrary) --> starting from 0.5, 0.5.
+Xr_all_mm.out <- normalmixEM(x = Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm, mean.constr = ns_syn_normex_mm.opt$mu, sd.constr = ns_syn_normex_mm.opt$sigma, lambda = c(0.5,0.5))
+
+#try calling on the complete data set, using fixed mu and sigma...with lambda from syn/(ns+syn) (arbitrary) --> usually converges on the exact same values as above for lambda...
+#Xr_all_mm.out <- normalmixEM(x = Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm, mean.constr = ns_syn_normex_mm.opt$mu, sd.constr = ns_syn_normex_mm.opt$sigma, lambda = c(dim(Xr_all_final_sns_norm_syn_norm_exp)[1]/dim(Xr_all_final_sns_norm_ns_syn_normex)[1],dim(Xr_all_final_sns_norm_ns)[1]/dim(Xr_all_final_sns_norm_ns_syn_normex)[1]))
+
+
+#try calling on the complete data set, using starting mu and sigma...with lambda = c(0.5,0.5) --> still gives same output parameters...
+#Xr_all_mm.out <- normalmixEM(x = Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1r2_sns_norm, mean = ns_syn_normex_mm.opt$mu, sd = ns_syn_normex_mm.opt$sigma, lambda = c(0.5,0.5))
+
+Xr_all_final_sns_norm$posterior_ns <- Xr_all_mm.out$posterior[,2]
+Xr_all_final_sns_norm$posterior_syn <- Xr_all_mm.out$posterior[,1]
+Xr_all_final_sns_norm$posterior_OR <- Xr_all_final_sns_norm$posterior_ns/Xr_all_final_sns_norm$posterior_syn
+Xr_all_OR_cutoff <- mean(c(max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns > .50),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')]),min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns < .50),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])))
+
+#max value likely LOF
+Xr_all_llof_thresh <- max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns > .95),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#max value that has 99% chance to be LOF
+Xr_all_lof_thresh <- max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns > .99),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#max value that is 10,000x more likely to be LOF
+max(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns > .999),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#min value that has <5% chance of being LOF
+Xr_all_lf_thresh <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns < .05),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+#min value that has <1% chance of being LOF
+Xr_all_f01_thresh <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns < 0.01),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+Xr_all_f_thresh <- min(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$posterior_ns < 0.001),c('tHDR_post_lib_loess_e.sns_r1r2_sns_norm')])
+
+#!!!! fix this call to plot the posterior probability of lof as a function of assay score and run two scripts below
+
+#zooming in on inflection in OR
+
+#comparing all 3 boundaries at 99% and 1% (mixtools;black, Mclust;blue) / or .05 FDR (red)
+
+#comparing thresholds to tHDR_post_pre ratios
+
+#comparing thresholds to tHDR_post_pre ratios (only for training data)
+
+#color by ClinVar
+
+
+
+#bimodal_compare and conseq_all plots with normalmixEM posterior set.
+##drawing lines on the ClinVar plots
+
+#replicate 1 vs. 2 with lines showing replicate concordance (gray) and similarity boundaries
+
+
+#replicate 1 vs. 2 with lines!
+
+
+
+
+### ASSIGN CATEGORIES TO ALL VARIANTS BASED ON THE POSTERIOR OF NS FROM mixtools MM:
+Xr_all_final_sns_norm$Xr_mmfunc_class <- 'NA'
+assign_mmfunc <- function(posterior_ns){
+  if (posterior_ns > 0.99) return('LOF') else if (posterior_ns < 0.01) return('FUNC') else return('INT')
+}
+Xr_all_final_sns_norm$Xr_mmfunc_class <- sapply(Xr_all_final_sns_norm$posterior_ns, assign_mmfunc)
+
+#assigned functional classes to all variants in database (unfiltered)
+
+### add in the real transcript annotation and amino acid changes (subtract 63 nt from CADD, 21 AA if in exon 15-23...)
+assign_clinvar_positions <- function(cDNApos,CDSpos,protPos,exon){
+  if (exon == 'X2' | exon == 'X3' | exon == 'X4' | exon == 'X5' | is.na(cDNApos)) return(c(as.numeric(as.character(cDNApos)),as.numeric(as.character(CDSpos)),as.numeric(as.character(protPos)))) else return(c(as.numeric(as.character(cDNApos))-63,as.numeric(as.character(CDSpos))-63,as.numeric(as.character(protPos))-21))
+}
+clinvar_pos_values = data.frame()
+clinvar_pos_values <- mapply(assign_clinvar_positions,Xr_all_final_sns_norm$cDNApos,Xr_all_final_sns_norm$CDSpos,Xr_all_final_sns_norm$protPos,Xr_all_final_sns_norm$exon)
+Xr_all_final_sns_norm$clinvar_cDNApos <- clinvar_pos_values[1,]
+Xr_all_final_sns_norm$clinvar_CDSpos <- clinvar_pos_values[2,]
+Xr_all_final_sns_norm$clinvar_protPos <- clinvar_pos_values[3,]
+
+Xr_all_final_sns_norm$pHGVS <- paste(paste('p.',Xr_all_final_sns_norm$oAA,sep=''),paste(Xr_all_final_sns_norm$clinvar_protPos,Xr_all_final_sns_norm$nAA,sep=''),sep='')
+
+# define this like above, but need the rev_comp and the alt Xr_all_final_sns_norm$cHGVS <- 
+
+#which points are in flossies?
+flossies.df <- read.csv('/Users/Greg/Documents/flossies_download_20171009_w_pos_alt.csv',header = TRUE)
+variants_in_flossies <- flossies.df$pos_alt
+assign_flossie_score <- function(snv_pos_alt){
+  if (snv_pos_alt %in% variants_in_flossies) return(flossies.df[which(flossies.df$pos_alt == snv_pos_alt),c('Overall.Frequency')]) else return(0)
+}
+Xr_all_final_sns_norm$flossies_score <- sapply(Xr_all_final_sns_norm$pos_alt, assign_flossie_score)
+
+#which points are in BRAVO?
+#note -- used BRAVO Freeze 5, and converted to hg19 coordinates using https://genome.ucsc.edu/cgi-bin/hgLiftOver
+bravo.df <- read.csv('/Users/Greg/Documents/BRAVO_BRCA1_ENSG00000012048_11-19-2017.csv',header = TRUE)
+variants_in_bravo <- bravo.df$hg19_pos_alt
+Xr_variants_in_exac <- Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$ExAC.ObsAlleles != 'NA'),]$pos_alt
+Xr_variants_in_clinvar <- Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$clinvar_simple != 'absent'),]$pos_alt
+
+assign_bravo_AF <- function(snv_pos_alt){
+  if (snv_pos_alt %in% variants_in_bravo) return(bravo.df[which(bravo.df$hg19_pos_alt == snv_pos_alt),c('allele_freq')]) else return('NA')
+}
+assign_bravo_count <- function(snv_pos_alt){
+  if (snv_pos_alt %in% variants_in_bravo) return(bravo.df[which(bravo.df$hg19_pos_alt == snv_pos_alt),c('allele_count')]) else return('NA')
+}
+Xr_all_final_sns_norm$bravo_AF <- sapply(Xr_all_final_sns_norm$pos_alt,assign_bravo_AF)
+Xr_all_final_sns_norm$bravo_count <- sapply(Xr_all_final_sns_norm$pos_alt,assign_bravo_count)
+
+## filter now, and re-run all scripts, then save db (might want to do python for pooling)
+#3958 total
+dim(Xr_all_final_sns_norm)[1]
+#3923 with a difference in scores between replicates of less than 4-fold
+dim(Xr_all_final_sns_norm[which(abs(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm-Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm)<2),])
+
+#define filters
+#most inclusive -->  just ensures variant is not classified oppositely across replicates -- 3798
+Xr_not_opposite_filter <- which(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm >= Xr_all_f01_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm > Xr_all_lof_thresh  | Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm < Xr_all_f01_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm <= Xr_all_lof_thresh | Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm >= Xr_all_f01_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm > Xr_all_lof_thresh  | Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm < Xr_all_f01_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm <= Xr_all_lof_thresh  )
+
+#requires both replicates to point to either functional / not -- 3659
+Xr_concordance_filter <- which( Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm> Xr_all_OR_cutoff &  Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm> Xr_all_OR_cutoff | Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm< Xr_all_OR_cutoff &  Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm< Xr_all_OR_cutoff)
+
+#requires both replicates to have same classification -- 3289
+Xr_same_class_filter <- which(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm >= Xr_all_f01_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm >= Xr_all_f01_thresh  | Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm <= Xr_all_lof_thresh & Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm <= Xr_all_lof_thresh )
+
+Xr_similarity_filter_1 <- which(abs(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm -  Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm) < 1)
+Xr_similarity_filter_2 <- which(abs(Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r1_sns_norm -  Xr_all_final_sns_norm$tHDR_post_lib_loess_e.sns_r2_sns_norm) < 2)
+
+#take all points that are either not opposite or whose scores differ by less than 2 - 3944
+Xr_final_filter <- union(Xr_not_opposite_filter,Xr_similarity_filter_2)
+Xr_all_final_sns_norm_filt <- Xr_all_final_sns_norm[Xr_final_filter,]
+
+#SNVs in CADD...
+Xr_all_final_sns_norm_filt_CADD <- Xr_all_final_sns_norm_filt[Xr_all_final_sns_norm_filt$pos_alt %in% Xr_variants_with_CADD,]
+
+
+
+Xr_variants_in_exon <- Xr_all_tHDR_pos_merge_master_df[which(is.na(Xr_all_tHDR_pos_merge_master_df$cDNApos) == FALSE),c('pos_alt')]
+Xr_all_final_sns_norm_filt_EXON <- Xr_all_final_sns_norm_filt[Xr_all_final_sns_norm_filt$pos_alt %in% Xr_variants_in_exon,]
+
+Xr_variants_in_CDS <- Xr_all_tHDR_pos_merge_master_df[which(is.na(Xr_all_tHDR_pos_merge_master_df$CDSpos) == FALSE),c('pos_alt')]
+Xr_all_final_sns_norm_filt_CDS <- Xr_all_final_sns_norm[Xr_all_final_sns_norm_filt$pos_alt %in% Xr_variants_in_CDS,]
+
+#call variants on inclusive list (Xr_all_tHDR_pos_merge_master_df), then select subset of filtered list for now...
+Xr_variants_with_RNA <- Xr_all_tHDR_pos_merge_master_df[which(is.na(Xr_all_tHDR_pos_merge_master_df$cDNApos) == FALSE & Xr_all_tHDR_pos_merge_master_df$exon != 'X18'),c('pos_alt')]
+Xr_all_final_sns_norm_filt_EXON_no18 <- Xr_all_final_sns_norm_filt[Xr_all_final_sns_norm_filt$pos_alt %in% Xr_variants_with_RNA,]
+Xr_variants_with_RNA_no_ns <- Xr_all_tHDR_pos_merge_master_df[which(is.na(Xr_all_tHDR_pos_merge_master_df$cDNApos) == FALSE & Xr_all_tHDR_pos_merge_master_df$exon != 'X18' & Xr_all_tHDR_pos_merge_master_df$exon != 'X18'),c('pos_alt')]
+
+Xr_all_final_sns_norm_filt_EXON_CADD <- Xr_all_final_sns_norm_filt_EXON[Xr_all_final_sns_norm_filt_EXON$pos_alt %in% Xr_variants_with_CADD,]
+### Xr_variants_with_RNA (no X18)
+Xr_all_final_sns_norm_filt_EXON_no18 <- Xr_all_final_sns_norm_filt[Xr_all_final_sns_norm_filt$pos_alt %in% Xr_variants_with_RNA,]
+#filter complete df on CADD:
+Xr_all_tHDR_pos_merge_master_df_CADD <- Xr_all_tHDR_pos_merge_master_df[Xr_all_tHDR_pos_merge_master_df$pos_alt %in% Xr_variants_with_CADD,]
+
+#ClinVar path / benign
+Xr_variants_P.B <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Pathogenic' | Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Benign'),c('pos_alt')]
+Xr_variants_P.B.LP.LB <- Xr_all_tHDR_pos_merge_master_df[which(Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Pathogenic' | Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Likely benign' | Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Likely pathogenic' | Xr_all_tHDR_pos_merge_master_df$clinvar_simple == 'Benign'),c('pos_alt')]
+Xr_all_final_sns_norm_filt_CADD_P.B <- Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_P.B,]
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB <- Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_P.B.LP.LB,]
+
+Xr_ns_syn_normex_variants <- append(Xr_all_final_sns_norm_syn_norm_exp$pos_alt,Xr_all_final_sns_norm_ns$pos_alt)
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex <- Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_ns_syn_normex_variants,]
+#for syn / ns roc
+#for all roc's -- define cuts based on every possible point in data set...
+#editing here -- fixed the syn/ns call set... now re-run code below and see if it works...
+
+Xr_roc_cuts <- append(Xr_all_final_sns_norm_filt_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm-0.00001,max(Xr_all_final_sns_norm_filt_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm)+0.00001)
+
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens <- c()
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr <- c()
+for (roc_cut in Xr_roc_cuts){
+  cut_off_sens <- length(which(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$conseq == 'STOP_GAINED'))/length(which(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$conseq == 'STOP_GAINED'))
+  cut_off_fpr <- length(which(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$conseq != 'STOP_GAINED'))/length(which(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex$conseq != 'STOP_GAINED'))
+  Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens <- append(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens,cut_off_sens)
+  Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr <- append(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr,cut_off_fpr)
+}
+
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc <- data.frame(cbind(Xr_roc_cuts,Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr,Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens))
+
+#get points where spec and sens. is optimally maximized
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc_youden <-Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc[which(1-Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc$Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc$Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens == max(1-Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc$Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_fpr+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc$Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_sens)),]
+#median of optimal cutoffs:
+median(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_roc_youden$Xr_roc_cuts)
+
+#ROC curve for nonsense vs. synonymous variants.
+
+#trying this again with geom_roc: #using negative here...
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_geom_roc <- Xr_all_final_sns_norm_filt_CADD_ns_syn_normex
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_geom_roc$D_ns_syn_normex <- 1
+assign_ns_syn_normex <- function(conseq){
+  if (conseq == 'STOP_GAINED') return(1) else return(0)}
+Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_geom_roc$D_ns_syn_normex <- sapply(Xr_all_final_sns_norm_filt_CADD_ns_syn_normex_geom_roc$conseq,assign_ns_syn_normex)
+#with AUC:
+
+
+#roc analysis for firm path and benign:
+Xr_all_final_sns_norm_filt_CADD_P.B_sens <- c()
+Xr_all_final_sns_norm_filt_CADD_P.B_fpr <- c()
+for (roc_cut in Xr_roc_cuts){
+  cut_off_sens <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_P.B$clinvar_simple == 'Pathogenic'))/length(which(Xr_all_final_sns_norm_filt_CADD_P.B$clinvar_simple == 'Pathogenic'))
+  cut_off_fpr <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_P.B$clinvar_simple != 'Pathogenic'))/length(which(Xr_all_final_sns_norm_filt_CADD_P.B$clinvar_simple != 'Pathogenic'))
+  Xr_all_final_sns_norm_filt_CADD_P.B_sens <- append(Xr_all_final_sns_norm_filt_CADD_P.B_sens,cut_off_sens)
+  Xr_all_final_sns_norm_filt_CADD_P.B_fpr <- append(Xr_all_final_sns_norm_filt_CADD_P.B_fpr,cut_off_fpr)
+}
+
+Xr_all_final_sns_norm_filt_CADD_P.B_roc <- data.frame(cbind(Xr_roc_cuts,Xr_all_final_sns_norm_filt_CADD_P.B_fpr,Xr_all_final_sns_norm_filt_CADD_P.B_sens))
+
+#get points where spec and sens. is optimally maximized
+Xr_all_final_sns_norm_filt_CADD_P.B_roc_youden <-Xr_all_final_sns_norm_filt_CADD_P.B_roc[which(1-Xr_all_final_sns_norm_filt_CADD_P.B_roc$Xr_all_final_sns_norm_filt_CADD_P.B_fpr+Xr_all_final_sns_norm_filt_CADD_P.B_roc$Xr_all_final_sns_norm_filt_CADD_P.B_sens == max(1-Xr_all_final_sns_norm_filt_CADD_P.B_roc$Xr_all_final_sns_norm_filt_CADD_P.B_fpr+Xr_all_final_sns_norm_filt_CADD_P.B_roc$Xr_all_final_sns_norm_filt_CADD_P.B_sens)),]
+#median of optimal cutoffs:
+median(Xr_all_final_sns_norm_filt_CADD_P.B_roc_youden$Xr_roc_cuts)
+
+#ROC curve for Pathogenic vs. Benign variants.
+
+#trying this again with geom_roc:
+Xr_all_final_sns_norm_filt_CADD_P.B_geom_roc <- Xr_all_final_sns_norm_filt_CADD_P.B
+Xr_all_final_sns_norm_filt_CADD_P.B_geom_roc$D_P.B <- 1
+assign_P.B <- function(clinvar_simple){
+  if (clinvar_simple == 'Pathogenic') return(1) else return(0)}
+Xr_all_final_sns_norm_filt_CADD_P.B_geom_roc$D_P.B <- sapply(Xr_all_final_sns_norm_filt_CADD_P.B_geom_roc$clinvar_simple,assign_P.B)
+#with AUC:
+
+#roc analysis for firm path and benign, missense only:
+Xr_all_final_sns_norm_filt_CADD_P.B.mis <- Xr_all_final_sns_norm_filt_CADD_P.B[which(Xr_all_final_sns_norm_filt_CADD_P.B$conseq == 'NON_SYNONYMOUS'),]
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens <- c()
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr <- c()
+for (roc_cut in Xr_roc_cuts){
+  cut_off_sens <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B.mis$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_P.B.mis$clinvar_simple == 'Pathogenic'))/length(which(Xr_all_final_sns_norm_filt_CADD_P.B.mis$clinvar_simple == 'Pathogenic'))
+  cut_off_fpr <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B.mis$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & Xr_all_final_sns_norm_filt_CADD_P.B.mis$clinvar_simple != 'Pathogenic'))/length(which(Xr_all_final_sns_norm_filt_CADD_P.B.mis$clinvar_simple != 'Pathogenic'))
+  Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens <- append(Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens,cut_off_sens)
+  Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr <- append(Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr,cut_off_fpr)
+}
+
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc <- data.frame(cbind(Xr_roc_cuts,Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr,Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens))
+
+#get points where spec and sens. is optimally maximized
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc_youden <-Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc[which(1-Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc$Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr+Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc$Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens == max(1-Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc$Xr_all_final_sns_norm_filt_CADD_P.B.mis_fpr+Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc$Xr_all_final_sns_norm_filt_CADD_P.B.mis_sens)),]
+#median of optimal cutoffs:
+median(Xr_all_final_sns_norm_filt_CADD_P.B.mis_roc_youden$Xr_roc_cuts)
+
+#ROC curve for Pathogenic vs. Benign missense variants.
+
+#trying this again with geom_roc:
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_geom_roc <- Xr_all_final_sns_norm_filt_CADD_P.B.mis
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_geom_roc$D_P.B.mis <- 1
+assign_P.B.mis <- function(clinvar_simple){
+  if (clinvar_simple == 'Pathogenic') return(1) else return(0)}
+Xr_all_final_sns_norm_filt_CADD_P.B.mis_geom_roc$D_P.B.mis <- sapply(Xr_all_final_sns_norm_filt_CADD_P.B.mis_geom_roc$clinvar_simple,assign_P.B.mis)
+
+#with AUC:
+
+#what about CADD, though?
+
+#what about grantham, though?
+
+#missense comparison
+
+#roc analysis for path and benign incl. 'likely':
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens <- c()
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr <- c()
+for (roc_cut in Xr_roc_cuts){
+  cut_off_sens <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & (Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple == 'Pathogenic' | Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple == 'Likely pathogenic' )))/length(which((Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple == 'Pathogenic' | Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple == 'Likely pathogenic' )))
+  cut_off_fpr <- length(which(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$tHDR_post_lib_loess_e.sns_r1r2_sns_norm < roc_cut & (Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple != 'Pathogenic' & Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple != 'Likely pathogenic' )))/length(which((Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple != 'Pathogenic' & Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB$clinvar_simple != 'Likely pathogenic' )))
+  Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens <- append(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens,cut_off_sens)
+  Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr <- append(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr,cut_off_fpr)
+}
+
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc <- data.frame(cbind(Xr_roc_cuts,Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr,Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens))
+
+#get points where spec and sens. is optimally maximized
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc_youden <-Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc[which(1-Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc$Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc$Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens == max(1-Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc$Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_fpr+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc$Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_sens)),]
+#median of optimal cutoffs:
+median(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_roc_youden$Xr_roc_cuts)
+
+#ROC curve for pathogenic vs. benign variants, including likely.
+
+#trying this again with geom_roc:
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_geom_roc <- Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_geom_roc$D_P.B.LP.LB <- 1
+assign_P.B.LP.LB <- function(clinvar_simple){
+  if (clinvar_simple == 'Pathogenic' | clinvar_simple == 'Likely pathogenic') return(1) else return(0)}
+Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_geom_roc$D_P.B.LP.LB <- sapply(Xr_all_final_sns_norm_filt_CADD_P.B.LP.LB_geom_roc$clinvar_simple,assign_P.B.LP.LB)
+#with AUC:
+#what about CADD, though?
+
+
+#Global plots for for replicate discordancies
+#plotting all points that are either concordant (in direction) or within (4-fold)
+#how filtering scheme looks
+
+#facet above plot to exon level, specifying order of exons and placing into 4 columns
+Xr_all_final_sns_norm_filt_CADD_exon_ordered <- Xr_all_final_sns_norm_filt_CADD
+Xr_all_final_sns_norm_filt_CADD_exon_ordered$exon <- factor(Xr_all_final_sns_norm_filt_CADD_exon_ordered$exon, levels =  c('X2','X3','X4','X5','X15','X16','X17','X18','X19','X20','X21','X22','X23'))
+
+#candidate figure for supplemental showing exons, both replicates...
+
+#performance on control sets:
+
+#facet above control plots over 'exon' (not filtered as above is)
+Xr_all_final_sns_norm_ns_syn_normex_exon_ordered <- Xr_all_final_sns_norm_ns_syn_normex
+Xr_all_final_sns_norm_ns_syn_normex_exon_ordered$exon <- factor(Xr_all_final_sns_norm_ns_syn_normex_exon_ordered$exon, levels =  c('X2','X3','X4','X5','X15','X16','X17','X18','X19','X20','X21','X22','X23'))
+
+#performance on clinvar (total):
+
+#performance on clinvar (same as above but faceting on conseq):
+
+## downstream analysis...
+
+#3905 Xr_variants total
+length(which(Xr_all_final_sns_norm_filt_CADD$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD$Xr_mmfunc_class == 'LOF'))
+
+#counts of each by conseq
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq != 'NON_SYNONYMOUS',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq != 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq != 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq != 'NON_SYNONYMOUS',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SPLICE_SITE',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SPLICE_SITE',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SPLICE_SITE',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'SPLICE_SITE',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'CANONICAL_SPLICE',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'CANONICAL_SPLICE',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'CANONICAL_SPLICE',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'CANONICAL_SPLICE',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'STOP_GAINED',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'STOP_GAINED',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'STOP_GAINED',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'STOP_GAINED',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == '5PRIME_UTR',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == '5PRIME_UTR',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == '5PRIME_UTR',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == '5PRIME_UTR',]$Xr_mmfunc_class == 'LOF'))
+
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'INTRONIC',]$Xr_mmfunc_class != 'NA'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'INTRONIC',]$Xr_mmfunc_class == 'INT'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'INTRONIC',]$Xr_mmfunc_class == 'FUNC'))
+length(which(Xr_all_final_sns_norm_filt_CADD[Xr_all_final_sns_norm_filt_CADD$conseq == 'INTRONIC',]$Xr_mmfunc_class == 'LOF'))
+
+### FACET OVER CONSEQUENCE AND COLOR BY CLINVAR (plotting absent on bottom)
+
+#is expression down in intermediate category?
+#make a geom_violin for this... doesn't really work.
+
+#box plot
+
+#by exon, looking at only 'stop_gained' (NMD):
+#box plot
+exon_ord_Xr_all_final_sns_norm_filt_EXON_no18_ns <- Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'STOP_GAINED'),]
+exon_ord_Xr_all_final_sns_norm_filt_EXON_no18_ns$exon <- factor(exon_ord_Xr_all_final_sns_norm_filt_EXON_no18_ns$exon, levels = c('X2','X3','X4','X5','X15','X16','X17','X19','X20','X21','X22','X23'))
+
+
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'FUNC' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'NON_SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'INT' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'NON_SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'LOF' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'NON_SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'FUNC' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'INT' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'LOF' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SYNONYMOUS'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'FUNC' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SPLICE_SITE'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'INT' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SPLICE_SITE'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+median(Xr_all_final_sns_norm_filt_EXON_no18[which(Xr_all_final_sns_norm_filt_EXON_no18$Xr_mmfunc_class == 'LOF' & Xr_all_final_sns_norm_filt_EXON_no18$conseq == 'SPLICE_SITE'),c('tHDR_rna_pre_ratio_r1r2_mean_synnorm')])
+
+
+#looking at how expression levels predict LOF using OR cutoff
+#redo with clinvar colors -- find way to put 'absent down first, then all others on top...
+
+# CANDIDATE FIGURE:  same call but with subset first ('absent')
+
+#how many VUS or Conflicting are re-assigned to classes vs. not:
+length(which(Xr_all_final_sns_norm$clinvar_simple == 'Uncertain significance'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'FUNC'),]$clinvar_simple == 'Uncertain significance'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'LOF'),]$clinvar_simple == 'Uncertain significance'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'INT'),]$clinvar_simple == 'Uncertain significance'))
+
+length(which(Xr_all_final_sns_norm$clinvar_simple == 'Conflicting interpretations of pathogenicity'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'FUNC'),]$clinvar_simple == 'Conflicting interpretations of pathogenicity'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'LOF'),]$clinvar_simple == 'Conflicting interpretations of pathogenicity'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'INT'),]$clinvar_simple == 'Conflicting interpretations of pathogenicity'))
+
+length(which(Xr_all_final_sns_norm$clinvar_simple == 'absent'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'FUNC'),]$clinvar_simple == 'absent'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'LOF'),]$clinvar_simple == 'absent'))
+length(which(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$Xr_mmfunc_class == 'INT'),]$clinvar_simple == 'absent'))
+
+### consider heatmap of %LOF for a matrix of variables (clinvar category x consequence, for instance)
+### correlation to predictive measurements: (change data frame reference and score...)
+#CADD.raw 
+
+#which points have an exac frequency over a given threshold? -- by score?
+#same as above but colored by ClinVar
+#make an exac database:
+Xr_all_final_sns_norm_filt_CADD_EXAC <- Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$ExAC.AF != 'NA'),]
+Xr_all_final_sns_norm_filt_CADD_EXAC_minAF <- Xr_all_final_sns_norm_filt_CADD_EXAC[which(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_EXAC$ExAC.AF)) == min(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_EXAC$ExAC.AF)))),]
+Xr_all_final_sns_norm_filt_CADD_EXAC_notminAF <- Xr_all_final_sns_norm_filt_CADD_EXAC[which(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_EXAC$ExAC.AF)) != min(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_EXAC$ExAC.AF)))),]
+#here are the actual allele counts
+Xr_all_final_sns_norm_filt_CADD_EXAC_notminAF[which(Xr_all_final_sns_norm_filt_CADD_EXAC_notminAF$Xr_mmfunc_class != 'LOF'),c('ExAC.ObsAlleles')]
+Xr_all_final_sns_norm_filt_CADD_EXAC_notminAF[which(Xr_all_final_sns_norm_filt_CADD_EXAC_notminAF$Xr_mmfunc_class == 'LOF'),c('ExAC.ObsAlleles')]
+
+###editing here to do bravo instead of EXAC:
+
+#which points have an bravo frequency over a given threshold? -- by score?
+#same as above but colored by ClinVar
+#make an bravo database:
+Xr_all_final_sns_norm_filt_CADD_bravo <- Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$bravo_AF != 'NA'),]
+Xr_all_final_sns_norm_filt_CADD_bravo_minAF <- Xr_all_final_sns_norm_filt_CADD_bravo[which(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_bravo$bravo_AF)) == min(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_bravo$bravo_AF)))),]
+Xr_all_final_sns_norm_filt_CADD_bravo_notminAF <- Xr_all_final_sns_norm_filt_CADD_bravo[which(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_bravo$bravo_AF)) != min(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD_bravo$bravo_AF)))),]
+#here are the actual allele counts
+Xr_all_final_sns_norm_filt_CADD_bravo_notminAF[which(Xr_all_final_sns_norm_filt_CADD_bravo_notminAF$Xr_mmfunc_class == 'LOF'),c('bravo_count')]
+Xr_all_final_sns_norm_filt_CADD_bravo_notminAF[which(Xr_all_final_sns_norm_filt_CADD_bravo_notminAF$Xr_mmfunc_class != 'LOF'),c('bravo_count')]
+
+#intersect variants in clinvar, bravo and exac!!
+#length of in any of the three:
+length(which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_clinvar | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac))
+#clinvar + exac
+length(which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_clinvar | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac))
+#clinvar + bravo
+length(which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_clinvar | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo))
+#exac + bravo
+length(which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo))
+
+Xr_all_final_sns_norm_filt_CADD_cv_ex_br <- Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_clinvar | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo | Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac),]
+#this plot only shows variants in both databases
+
+Xr_all_final_sns_norm_filt_CADD_br_not_exac <- Xr_all_final_sns_norm_filt_CADD[which( Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo & (Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac == FALSE)),]
+
+#are any variants unique to FLOSSIES?
+Xr_all_final_sns_norm_filt_CADD_fl_not_exac_br <- Xr_all_final_sns_norm_filt_CADD[which( Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_flossies & ((Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac == FALSE)&(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo == FALSE))),]
+
+Xr_all_final_sns_norm_filt_CADD_fl_not_exac_br_cv <- Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_flossies & ((Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_exac == FALSE)&(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% variants_in_bravo == FALSE)&(Xr_all_final_sns_norm_filt_CADD$pos_alt %in% Xr_variants_in_clinvar == FALSE))),]
+
+#Flossies (all) variants by conseq
+
+#Flossies (all) variants by clinvar
+
+#Flossies (unique) variants by conseq
+#Flossies (not in exac or bravo) variants by conseq
+
+Xr_all_final_sns_norm_ns_syn_normex_gam <- Xr_all_final_sns_norm_ns_syn_normex
+Xr_all_final_sns_norm_ns_syn_normex_gam$lof <- sapply(Xr_all_final_sns_norm_ns_syn_normex_gam$conseq,assign_lof)
+
+#which points have a conservation score over a given threshold?  -- by functional score?
+
+#PhyloP (mammalian)
+
+cor(Xr_all_final_sns_norm_filt_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD$mamPhyloP))),method='spearman')
+
+#fitCons
+
+#priPhCons
+
+cor(Xr_all_final_sns_norm_filt_CADD$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD$priPhCons))),method='spearman')
+
+#Grantham (only missense) colored by ClinVar
+
+#Grantham missense corr.
+cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'tHDR_post_lib_loess_e.sns_r1r2_sns_norm'],(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'Grantham']))),method='spearman')
+
+#CADD missense corr.
+cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'tHDR_post_lib_loess_e.sns_r1r2_sns_norm'],(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'CADD.phred']))),method='spearman')
+
+#polyphen missense corr.
+cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'tHDR_post_lib_loess_e.sns_r1r2_sns_norm'],(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'polyphen.val']))),method='spearman')
+
+#sift missense corr.
+cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'tHDR_post_lib_loess_e.sns_r1r2_sns_norm'],(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'NON_SYNONYMOUS'),'SIFTval']))),method='spearman')
+
+#CADD synonymous corr.
+cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS'),'tHDR_post_lib_loess_e.sns_r1r2_sns_norm'],(as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$conseq == 'SYNONYMOUS'),'CADD.phred']))),method='spearman')
+
+#write this out:
+write.table(Xr_all_final_sns_norm, "/mount/SGE/BRCA1/Xr_all_final_sns_norm_20171106.txt", sep="\t")
+#Xr_all_final_sns_norm <- read.table("/mount/SGE/BRCA1/Xr_all_final_sns_norm_20171106.txt", sep="\t")
+write.table(Xr_all_final_sns_norm_filt_CADD, "/mount/SGE/BRCA1/Xr_all_final_sns_norm_filt_CADD_20171106.txt", sep="\t")
+
+#correlation by exon...
+Xr_func_score_cors_X2 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X3 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X4 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X5 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X15 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X16 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X17 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X18 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X19 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X20 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X21 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X22 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+Xr_func_score_cors_X23 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+
+Xr_all_func_score_corss <- c(Xr_func_score_cors_X2,Xr_func_score_cors_X3,Xr_func_score_cors_X4,Xr_func_score_cors_X5,Xr_func_score_cors_X15,Xr_func_score_cors_X16,Xr_func_score_cors_X17,Xr_func_score_cors_X18,Xr_func_score_cors_X19,Xr_func_score_cors_X20,Xr_func_score_cors_X21,Xr_func_score_cors_X22,Xr_func_score_cors_X23)
+
+Xr_func_score_corp_X2 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X3 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X4 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X5 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X15 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X16 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X17 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X18 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X19 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X20 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X21 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X22 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+Xr_func_score_corp_X23 <- cor(Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm_filt[which(Xr_all_final_sns_norm_filt$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='pearson')
+
+Xr_all_func_score_corp <- c(Xr_func_score_corp_X2,Xr_func_score_corp_X3,Xr_func_score_corp_X4,Xr_func_score_corp_X5,Xr_func_score_corp_X15,Xr_func_score_corp_X16,Xr_func_score_corp_X17,Xr_func_score_corp_X18,Xr_func_score_corp_X19,Xr_func_score_corp_X20,Xr_func_score_corp_X21,Xr_func_score_corp_X22,Xr_func_score_corp_X23)
+
+
+
+###### start comparing Xr and XrL4 data... needs updating.
+#example going exon by exon
+
+#only on good exons...
+
+#check null distribution disruption -- are the 3 syn variants that were down in L4 also down in WT?
+
+
+
+##### ends section comparing results side-by-side
+```
+

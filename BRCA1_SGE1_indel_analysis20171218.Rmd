@@ -1,0 +1,711 @@
+INDEL ANALYSIS to estimate number of distinct variants scored by pooling true_indels from all exons
+and to see how indel frame matters across exons / ID specific variants that do / don't cause depletion
+
+```{r}
+X2r1.indel_file <- paste(experiment_dir_171011,'X2r1','_annotated_sindels.txt',sep='')
+X2r2.indel_file <- paste(experiment_dir_171011,'X2r2','_annotated_sindels.txt',sep='')
+X2r1.indels <- read.table(X2r1.indel_file, header=TRUE, sep="\t")
+X2r2.indels <- read.table(X2r2.indel_file, header=TRUE, sep="\t")
+X2r1.indels$exon <- 'X2'
+X2r1.indels$frame <- 'NA'
+X2r1.indels[which(X2r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X2r1.indels$indel_frame == 0)))
+X2r1.indels[which(X2r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X2r1.indels$indel_frame != 0)))
+X2r1.indels$post_pre_ratio_synnorm <- X2r1.indels$post_pre_ratio/X2r1_tSNV_syn_post_pre_med
+X2r2.indels$post_pre_ratio_synnorm <- X2r2.indels$post_pre_ratio/X2r2_tSNV_syn_post_pre_med
+X2r1r2.indels <- X2r1.indels[which(X2r1.indels$variant %in% X2r2.indels$variant),]
+X2r2r1.indels <- X2r2.indels[which(X2r2.indels$variant %in% X2r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X2r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X2r1r2.indels <- merge(X2r1r2.indels,X2r2r1.indels,by='variant')
+X2r1r2.indels$post_pre_ratio_r1r2 <- (X2r1r2.indels$post_pre_ratio+X2r1r2.indels$r2_post_pre_ratio)/2
+X2r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X2r1r2.indels$post_pre_ratio_synnorm+X2r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X2r1r2.indels.true <- X2r1r2.indels[which(X2r1r2.indels$true_indel == 'True' | X2r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X2r1r2.indels.true[which(X2r1r2.indels.true$indel_type == 'D' | X2r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X2rL41.indel_file <- paste(experiment_dir_170731,'X2rL41','_annotated_sindels.txt',sep='')
+X2rL42.indel_file <- paste(experiment_dir_170731,'X2rL42','_annotated_sindels.txt',sep='')
+X2rL41.indels <- read.table(X2rL41.indel_file, header=TRUE, sep="\t")
+X2rL42.indels <- read.table(X2rL42.indel_file, header=TRUE, sep="\t")
+
+X2rL41.indels$exon <- 'X2'
+X2rL41.indels$frame <- 'NA'
+X2rL41.indels[which(X2rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X2rL41.indels$indel_frame == 0)))
+X2rL41.indels[which(X2rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X2rL41.indels$indel_frame != 0)))
+X2rL41.indels$post_pre_ratio_synnorm <- X2rL41.indels$post_pre_ratio/X2rL41_tSNV_syn_post_pre_med
+X2rL42.indels$post_pre_ratio_synnorm <- X2rL42.indels$post_pre_ratio/X2rL42_tSNV_syn_post_pre_med
+
+X2rL41rL42.indels <- X2rL41.indels[which(X2rL41.indels$variant %in% X2rL42.indels$variant),]
+X2rL42rL41.indels <- X2rL42.indels[which(X2rL42.indels$variant %in% X2rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X2rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X2rL41rL42.indels <- merge(X2rL41rL42.indels,X2rL42rL41.indels,by='variant')
+X2rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X2rL41rL42.indels$post_pre_ratio+X2rL41rL42.indels$rL42_post_pre_ratio)/2
+X2rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X2rL41rL42.indels$post_pre_ratio_synnorm+X2rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X2rL41rL42.indels.true <- X2rL41rL42.indels[which(X2rL41rL42.indels$true_indel == 'True' | X2rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X2rL41rL42.indels.true[which(X2rL41rL42.indels.true$indel_type == 'D' | X2rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X2r1.indels)
+rm(X2r2.indels)
+rm(X2r2r1.indels)
+rm(X2rL41.indels)
+rm(X2rL42.indels)
+rm(X2rL42rL41.indels)
+```
+
+```{r}
+X3r1.indel_file <- paste(experiment_dir_171011,'X3r1','_annotated_sindels.txt',sep='')
+X3r2.indel_file <- paste(experiment_dir_171011,'X3r2','_annotated_sindels.txt',sep='')
+X3r1.indels <- read.table(X3r1.indel_file, header=TRUE, sep="\t")
+X3r2.indels <- read.table(X3r2.indel_file, header=TRUE, sep="\t")
+X3r1.indels$exon <- 'X3'
+X3r1.indels$frame <- 'NA'
+X3r1.indels[which(X3r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X3r1.indels$indel_frame == 0)))
+X3r1.indels[which(X3r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X3r1.indels$indel_frame != 0)))
+X3r1.indels$post_pre_ratio_synnorm <- X3r1.indels$post_pre_ratio/X3r1_tSNV_syn_post_pre_med
+X3r2.indels$post_pre_ratio_synnorm <- X3r2.indels$post_pre_ratio/X3r2_tSNV_syn_post_pre_med
+X3r1r2.indels <- X3r1.indels[which(X3r1.indels$variant %in% X3r2.indels$variant),]
+X3r2r1.indels <- X3r2.indels[which(X3r2.indels$variant %in% X3r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X3r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X3r1r2.indels <- merge(X3r1r2.indels,X3r2r1.indels,by='variant')
+X3r1r2.indels$post_pre_ratio_r1r2 <- (X3r1r2.indels$post_pre_ratio+X3r1r2.indels$r2_post_pre_ratio)/2
+X3r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X3r1r2.indels$post_pre_ratio_synnorm+X3r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X3r1r2.indels.true <- X3r1r2.indels[which(X3r1r2.indels$true_indel == 'True' | X3r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X3r1r2.indels.true[which(X3r1r2.indels.true$indel_type == 'D' | X3r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X3rL41.indel_file <- paste(experiment_dir_170731,'X3rL41','_annotated_sindels.txt',sep='')
+X3rL42.indel_file <- paste(experiment_dir_170731,'X3rL42','_annotated_sindels.txt',sep='')
+X3rL41.indels <- read.table(X3rL41.indel_file, header=TRUE, sep="\t")
+X3rL42.indels <- read.table(X3rL42.indel_file, header=TRUE, sep="\t")
+
+X3rL41.indels$exon <- 'X3'
+X3rL41.indels$frame <- 'NA'
+X3rL41.indels[which(X3rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X3rL41.indels$indel_frame == 0)))
+X3rL41.indels[which(X3rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X3rL41.indels$indel_frame != 0)))
+X3rL41.indels$post_pre_ratio_synnorm <- X3rL41.indels$post_pre_ratio/X3rL41_tSNV_syn_post_pre_med
+X3rL42.indels$post_pre_ratio_synnorm <- X3rL42.indels$post_pre_ratio/X3rL42_tSNV_syn_post_pre_med
+
+X3rL41rL42.indels <- X3rL41.indels[which(X3rL41.indels$variant %in% X3rL42.indels$variant),]
+X3rL42rL41.indels <- X3rL42.indels[which(X3rL42.indels$variant %in% X3rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X3rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X3rL41rL42.indels <- merge(X3rL41rL42.indels,X3rL42rL41.indels,by='variant')
+X3rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X3rL41rL42.indels$post_pre_ratio+X3rL41rL42.indels$rL42_post_pre_ratio)/2
+X3rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X3rL41rL42.indels$post_pre_ratio_synnorm+X3rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X3rL41rL42.indels.true <- X3rL41rL42.indels[which(X3rL41rL42.indels$true_indel == 'True' | X3rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X3rL41rL42.indels.true[which(X3rL41rL42.indels.true$indel_type == 'D' | X3rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X3r1.indels)
+rm(X3r2.indels)
+rm(X3r2r1.indels)
+rm(X3rL41.indels)
+rm(X3rL42.indels)
+rm(X3rL42rL41.indels)
+```
+
+```{r}
+X4r1.indel_file <- paste(experiment_dir_171011,'X4r1','_annotated_sindels.txt',sep='')
+X4r2.indel_file <- paste(experiment_dir_171011,'X4r2','_annotated_sindels.txt',sep='')
+X4r1.indels <- read.table(X4r1.indel_file, header=TRUE, sep="\t")
+X4r2.indels <- read.table(X4r2.indel_file, header=TRUE, sep="\t")
+X4r1.indels$exon <- 'X4'
+X4r1.indels$frame <- 'NA'
+X4r1.indels[which(X4r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X4r1.indels$indel_frame == 0)))
+X4r1.indels[which(X4r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X4r1.indels$indel_frame != 0)))
+X4r1.indels$post_pre_ratio_synnorm <- X4r1.indels$post_pre_ratio/X4r1_tSNV_syn_post_pre_med
+X4r2.indels$post_pre_ratio_synnorm <- X4r2.indels$post_pre_ratio/X4r2_tSNV_syn_post_pre_med
+X4r1r2.indels <- X4r1.indels[which(X4r1.indels$variant %in% X4r2.indels$variant),]
+X4r2r1.indels <- X4r2.indels[which(X4r2.indels$variant %in% X4r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X4r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X4r1r2.indels <- merge(X4r1r2.indels,X4r2r1.indels,by='variant')
+X4r1r2.indels$post_pre_ratio_r1r2 <- (X4r1r2.indels$post_pre_ratio+X4r1r2.indels$r2_post_pre_ratio)/2
+X4r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X4r1r2.indels$post_pre_ratio_synnorm+X4r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X4r1r2.indels.true <- X4r1r2.indels[which(X4r1r2.indels$true_indel == 'True' | X4r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X4r1r2.indels.true[which(X4r1r2.indels.true$indel_type == 'D' | X4r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X4rL41.indel_file <- paste(experiment_dir_170731,'X4rL41','_annotated_sindels.txt',sep='')
+X4rL42.indel_file <- paste(experiment_dir_170731,'X4rL42','_annotated_sindels.txt',sep='')
+X4rL41.indels <- read.table(X4rL41.indel_file, header=TRUE, sep="\t")
+X4rL42.indels <- read.table(X4rL42.indel_file, header=TRUE, sep="\t")
+
+X4rL41.indels$exon <- 'X4'
+X4rL41.indels$frame <- 'NA'
+X4rL41.indels[which(X4rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X4rL41.indels$indel_frame == 0)))
+X4rL41.indels[which(X4rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X4rL41.indels$indel_frame != 0)))
+X4rL41.indels$post_pre_ratio_synnorm <- X4rL41.indels$post_pre_ratio/X4rL41_tSNV_syn_post_pre_med
+X4rL42.indels$post_pre_ratio_synnorm <- X4rL42.indels$post_pre_ratio/X4rL42_tSNV_syn_post_pre_med
+
+X4rL41rL42.indels <- X4rL41.indels[which(X4rL41.indels$variant %in% X4rL42.indels$variant),]
+X4rL42rL41.indels <- X4rL42.indels[which(X4rL42.indels$variant %in% X4rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X4rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X4rL41rL42.indels <- merge(X4rL41rL42.indels,X4rL42rL41.indels,by='variant')
+X4rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X4rL41rL42.indels$post_pre_ratio+X4rL41rL42.indels$rL42_post_pre_ratio)/2
+X4rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X4rL41rL42.indels$post_pre_ratio_synnorm+X4rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X4rL41rL42.indels.true <- X4rL41rL42.indels[which(X4rL41rL42.indels$true_indel == 'True' | X4rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X4rL41rL42.indels.true[which(X4rL41rL42.indels.true$indel_type == 'D' | X4rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X4r1.indels)
+rm(X4r2.indels)
+rm(X4r2r1.indels)
+rm(X4rL41.indels)
+rm(X4rL42.indels)
+rm(X4rL42rL41.indels)
+```
+
+```{r}
+X5r1.indel_file <- paste(experiment_dir_171011,'X5r1','_annotated_sindels.txt',sep='')
+X5r2.indel_file <- paste(experiment_dir_171011,'X5r2','_annotated_sindels.txt',sep='')
+X5r1.indels <- read.table(X5r1.indel_file, header=TRUE, sep="\t")
+X5r2.indels <- read.table(X5r2.indel_file, header=TRUE, sep="\t")
+X5r1.indels$exon <- 'X5'
+X5r1.indels$frame <- 'NA'
+X5r1.indels[which(X5r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X5r1.indels$indel_frame == 0)))
+X5r1.indels[which(X5r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X5r1.indels$indel_frame != 0)))
+X5r1.indels$post_pre_ratio_synnorm <- X5r1.indels$post_pre_ratio/X5r1_tSNV_syn_post_pre_med
+X5r2.indels$post_pre_ratio_synnorm <- X5r2.indels$post_pre_ratio/X5r2_tSNV_syn_post_pre_med
+X5r1r2.indels <- X5r1.indels[which(X5r1.indels$variant %in% X5r2.indels$variant),]
+X5r2r1.indels <- X5r2.indels[which(X5r2.indels$variant %in% X5r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X5r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X5r1r2.indels <- merge(X5r1r2.indels,X5r2r1.indels,by='variant')
+X5r1r2.indels$post_pre_ratio_r1r2 <- (X5r1r2.indels$post_pre_ratio+X5r1r2.indels$r2_post_pre_ratio)/2
+X5r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X5r1r2.indels$post_pre_ratio_synnorm+X5r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X5r1r2.indels.true <- X5r1r2.indels[which(X5r1r2.indels$true_indel == 'True' | X5r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X5r1r2.indels.true[which(X5r1r2.indels.true$indel_type == 'D' | X5r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X5rL41.indel_file <- paste(experiment_dir_170731,'X5rL41','_annotated_sindels.txt',sep='')
+X5rL42.indel_file <- paste(experiment_dir_170731,'X5rL42','_annotated_sindels.txt',sep='')
+X5rL41.indels <- read.table(X5rL41.indel_file, header=TRUE, sep="\t")
+X5rL42.indels <- read.table(X5rL42.indel_file, header=TRUE, sep="\t")
+
+X5rL41.indels$exon <- 'X5'
+X5rL41.indels$frame <- 'NA'
+X5rL41.indels[which(X5rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X5rL41.indels$indel_frame == 0)))
+X5rL41.indels[which(X5rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X5rL41.indels$indel_frame != 0)))
+X5rL41.indels$post_pre_ratio_synnorm <- X5rL41.indels$post_pre_ratio/X5rL41_tSNV_syn_post_pre_med
+X5rL42.indels$post_pre_ratio_synnorm <- X5rL42.indels$post_pre_ratio/X5rL42_tSNV_syn_post_pre_med
+
+X5rL41rL42.indels <- X5rL41.indels[which(X5rL41.indels$variant %in% X5rL42.indels$variant),]
+X5rL42rL41.indels <- X5rL42.indels[which(X5rL42.indels$variant %in% X5rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X5rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X5rL41rL42.indels <- merge(X5rL41rL42.indels,X5rL42rL41.indels,by='variant')
+X5rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X5rL41rL42.indels$post_pre_ratio+X5rL41rL42.indels$rL42_post_pre_ratio)/2
+X5rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X5rL41rL42.indels$post_pre_ratio_synnorm+X5rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X5rL41rL42.indels.true <- X5rL41rL42.indels[which(X5rL41rL42.indels$true_indel == 'True' | X5rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X5rL41rL42.indels.true[which(X5rL41rL42.indels.true$indel_type == 'D' | X5rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X5r1.indels)
+rm(X5r2.indels)
+rm(X5r2r1.indels)
+rm(X5rL41.indels)
+rm(X5rL42.indels)
+rm(X5rL42rL41.indels)
+```
+
+```{r}
+X15r1.indel_file <- paste(experiment_dir_171011,'X15r2','_annotated_sindels.txt',sep='')
+X15r2.indel_file <- paste(experiment_dir_171011,'X15r3','_annotated_sindels.txt',sep='')
+X15r1.indels <- read.table(X15r1.indel_file, header=TRUE, sep="\t")
+X15r2.indels <- read.table(X15r2.indel_file, header=TRUE, sep="\t")
+X15r1.indels$exon <- 'X15'
+X15r1.indels$frame <- 'NA'
+X15r1.indels[which(X15r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X15r1.indels$indel_frame == 0)))
+X15r1.indels[which(X15r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X15r1.indels$indel_frame != 0)))
+X15r1.indels$post_pre_ratio_synnorm <- X15r1.indels$post_pre_ratio/X15r1_tSNV_syn_post_pre_med
+X15r2.indels$post_pre_ratio_synnorm <- X15r2.indels$post_pre_ratio/X15r2_tSNV_syn_post_pre_med
+X15r1r2.indels <- X15r1.indels[which(X15r1.indels$variant %in% X15r2.indels$variant),]
+X15r2r1.indels <- X15r2.indels[which(X15r2.indels$variant %in% X15r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X15r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X15r1r2.indels <- merge(X15r1r2.indels,X15r2r1.indels,by='variant')
+X15r1r2.indels$post_pre_ratio_r1r2 <- (X15r1r2.indels$post_pre_ratio+X15r1r2.indels$r2_post_pre_ratio)/2
+X15r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X15r1r2.indels$post_pre_ratio_synnorm+X15r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X15r1r2.indels.true <- X15r1r2.indels[which(X15r1r2.indels$true_indel == 'True' | X15r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X15r1r2.indels.true[which(X15r1r2.indels.true$indel_type == 'D' | X15r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X15rL41.indel_file <- paste(experiment_dir_170731,'X15rL41','_annotated_sindels.txt',sep='')
+X15rL42.indel_file <- paste(experiment_dir_170731,'X15rL42','_annotated_sindels.txt',sep='')
+X15rL41.indels <- read.table(X15rL41.indel_file, header=TRUE, sep="\t")
+X15rL42.indels <- read.table(X15rL42.indel_file, header=TRUE, sep="\t")
+
+X15rL41.indels$exon <- 'X15'
+X15rL41.indels$frame <- 'NA'
+X15rL41.indels[which(X15rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X15rL41.indels$indel_frame == 0)))
+X15rL41.indels[which(X15rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X15rL41.indels$indel_frame != 0)))
+X15rL41.indels$post_pre_ratio_synnorm <- X15rL41.indels$post_pre_ratio/X15rL41_tSNV_syn_post_pre_med
+X15rL42.indels$post_pre_ratio_synnorm <- X15rL42.indels$post_pre_ratio/X15rL42_tSNV_syn_post_pre_med
+
+X15rL41rL42.indels <- X15rL41.indels[which(X15rL41.indels$variant %in% X15rL42.indels$variant),]
+X15rL42rL41.indels <- X15rL42.indels[which(X15rL42.indels$variant %in% X15rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X15rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X15rL41rL42.indels <- merge(X15rL41rL42.indels,X15rL42rL41.indels,by='variant')
+X15rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X15rL41rL42.indels$post_pre_ratio+X15rL41rL42.indels$rL42_post_pre_ratio)/2
+X15rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X15rL41rL42.indels$post_pre_ratio_synnorm+X15rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X15rL41rL42.indels.true <- X15rL41rL42.indels[which(X15rL41rL42.indels$true_indel == 'True' | X15rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X15rL41rL42.indels.true[which(X15rL41rL42.indels.true$indel_type == 'D' | X15rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X15r1.indels)
+rm(X15r2.indels)
+rm(X15r2r1.indels)
+rm(X15rL41.indels)
+rm(X15rL42.indels)
+rm(X15rL42rL41.indels)
+```
+
+```{r}
+X16r1.indel_file <- paste(experiment_dir_171011,'X16r1','_annotated_sindels.txt',sep='')
+X16r2.indel_file <- paste(experiment_dir_171011,'X16r2','_annotated_sindels.txt',sep='')
+X16r1.indels <- read.table(X16r1.indel_file, header=TRUE, sep="\t")
+X16r2.indels <- read.table(X16r2.indel_file, header=TRUE, sep="\t")
+X16r1.indels$exon <- 'X16'
+X16r1.indels$frame <- 'NA'
+X16r1.indels[which(X16r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X16r1.indels$indel_frame == 0)))
+X16r1.indels[which(X16r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X16r1.indels$indel_frame != 0)))
+X16r1.indels$post_pre_ratio_synnorm <- X16r1.indels$post_pre_ratio/X16r1_tSNV_syn_post_pre_med
+X16r2.indels$post_pre_ratio_synnorm <- X16r2.indels$post_pre_ratio/X16r2_tSNV_syn_post_pre_med
+X16r1r2.indels <- X16r1.indels[which(X16r1.indels$variant %in% X16r2.indels$variant),]
+X16r2r1.indels <- X16r2.indels[which(X16r2.indels$variant %in% X16r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X16r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X16r1r2.indels <- merge(X16r1r2.indels,X16r2r1.indels,by='variant')
+X16r1r2.indels$post_pre_ratio_r1r2 <- (X16r1r2.indels$post_pre_ratio+X16r1r2.indels$r2_post_pre_ratio)/2
+X16r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X16r1r2.indels$post_pre_ratio_synnorm+X16r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X16r1r2.indels.true <- X16r1r2.indels[which(X16r1r2.indels$true_indel == 'True' | X16r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X16r1r2.indels.true[which(X16r1r2.indels.true$indel_type == 'D' | X16r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X16rL41.indel_file <- paste(experiment_dir_170731,'X16rL41','_annotated_sindels.txt',sep='')
+X16rL42.indel_file <- paste(experiment_dir_170731,'X16rL42','_annotated_sindels.txt',sep='')
+X16rL41.indels <- read.table(X16rL41.indel_file, header=TRUE, sep="\t")
+X16rL42.indels <- read.table(X16rL42.indel_file, header=TRUE, sep="\t")
+
+X16rL41.indels$exon <- 'X16'
+X16rL41.indels$frame <- 'NA'
+X16rL41.indels[which(X16rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X16rL41.indels$indel_frame == 0)))
+X16rL41.indels[which(X16rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X16rL41.indels$indel_frame != 0)))
+X16rL41.indels$post_pre_ratio_synnorm <- X16rL41.indels$post_pre_ratio/X16rL41_tSNV_syn_post_pre_med
+X16rL42.indels$post_pre_ratio_synnorm <- X16rL42.indels$post_pre_ratio/X16rL42_tSNV_syn_post_pre_med
+
+X16rL41rL42.indels <- X16rL41.indels[which(X16rL41.indels$variant %in% X16rL42.indels$variant),]
+X16rL42rL41.indels <- X16rL42.indels[which(X16rL42.indels$variant %in% X16rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X16rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X16rL41rL42.indels <- merge(X16rL41rL42.indels,X16rL42rL41.indels,by='variant')
+X16rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X16rL41rL42.indels$post_pre_ratio+X16rL41rL42.indels$rL42_post_pre_ratio)/2
+X16rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X16rL41rL42.indels$post_pre_ratio_synnorm+X16rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X16rL41rL42.indels.true <- X16rL41rL42.indels[which(X16rL41rL42.indels$true_indel == 'True' | X16rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X16rL41rL42.indels.true[which(X16rL41rL42.indels.true$indel_type == 'D' | X16rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X16r1.indels)
+rm(X16r2.indels)
+rm(X16r2r1.indels)
+rm(X16rL41.indels)
+rm(X16rL42.indels)
+rm(X16rL42rL41.indels)
+```
+
+```{r}
+X17r1.indel_file <- paste(experiment_dir_171011,'X17r1','_annotated_sindels.txt',sep='')
+X17r2.indel_file <- paste(experiment_dir_171011,'X17r2','_annotated_sindels.txt',sep='')
+X17r1.indels <- read.table(X17r1.indel_file, header=TRUE, sep="\t")
+X17r2.indels <- read.table(X17r2.indel_file, header=TRUE, sep="\t")
+X17r1.indels$exon <- 'X17'
+X17r1.indels$frame <- 'NA'
+X17r1.indels[which(X17r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X17r1.indels$indel_frame == 0)))
+X17r1.indels[which(X17r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X17r1.indels$indel_frame != 0)))
+X17r1.indels$post_pre_ratio_synnorm <- X17r1.indels$post_pre_ratio/X17r1_tSNV_syn_post_pre_med
+X17r2.indels$post_pre_ratio_synnorm <- X17r2.indels$post_pre_ratio/X17r2_tSNV_syn_post_pre_med
+X17r1r2.indels <- X17r1.indels[which(X17r1.indels$variant %in% X17r2.indels$variant),]
+X17r2r1.indels <- X17r2.indels[which(X17r2.indels$variant %in% X17r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X17r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X17r1r2.indels <- merge(X17r1r2.indels,X17r2r1.indels,by='variant')
+X17r1r2.indels$post_pre_ratio_r1r2 <- (X17r1r2.indels$post_pre_ratio+X17r1r2.indels$r2_post_pre_ratio)/2
+X17r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X17r1r2.indels$post_pre_ratio_synnorm+X17r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X17r1r2.indels.true <- X17r1r2.indels[which(X17r1r2.indels$true_indel == 'True' | X17r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X17r1r2.indels.true[which(X17r1r2.indels.true$indel_type == 'D' | X17r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X17rL41.indel_file <- paste(experiment_dir_170731,'X17rL41','_annotated_sindels.txt',sep='')
+X17rL42.indel_file <- paste(experiment_dir_170731,'X17rL42','_annotated_sindels.txt',sep='')
+X17rL41.indels <- read.table(X17rL41.indel_file, header=TRUE, sep="\t")
+X17rL42.indels <- read.table(X17rL42.indel_file, header=TRUE, sep="\t")
+
+X17rL41.indels$exon <- 'X17'
+X17rL41.indels$frame <- 'NA'
+X17rL41.indels[which(X17rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X17rL41.indels$indel_frame == 0)))
+X17rL41.indels[which(X17rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X17rL41.indels$indel_frame != 0)))
+X17rL41.indels$post_pre_ratio_synnorm <- X17rL41.indels$post_pre_ratio/X17rL41_tSNV_syn_post_pre_med
+X17rL42.indels$post_pre_ratio_synnorm <- X17rL42.indels$post_pre_ratio/X17rL42_tSNV_syn_post_pre_med
+
+X17rL41rL42.indels <- X17rL41.indels[which(X17rL41.indels$variant %in% X17rL42.indels$variant),]
+X17rL42rL41.indels <- X17rL42.indels[which(X17rL42.indels$variant %in% X17rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X17rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X17rL41rL42.indels <- merge(X17rL41rL42.indels,X17rL42rL41.indels,by='variant')
+X17rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X17rL41rL42.indels$post_pre_ratio+X17rL41rL42.indels$rL42_post_pre_ratio)/2
+X17rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X17rL41rL42.indels$post_pre_ratio_synnorm+X17rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X17rL41rL42.indels.true <- X17rL41rL42.indels[which(X17rL41rL42.indels$true_indel == 'True' | X17rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X17rL41rL42.indels.true[which(X17rL41rL42.indels.true$indel_type == 'D' | X17rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X17r1.indels)
+rm(X17r2.indels)
+rm(X17r2r1.indels)
+rm(X17rL41.indels)
+rm(X17rL42.indels)
+rm(X17rL42rL41.indels)
+```
+
+```{r}
+X18r1.indel_file <- paste(experiment_dir_171011,'X18r1','_annotated_sindels.txt',sep='')
+X18r2.indel_file <- paste(experiment_dir_171011,'X18r2','_annotated_sindels.txt',sep='')
+X18r1.indels <- read.table(X18r1.indel_file, header=TRUE, sep="\t")
+X18r2.indels <- read.table(X18r2.indel_file, header=TRUE, sep="\t")
+X18r1.indels$exon <- 'X18'
+X18r1.indels$frame <- 'NA'
+X18r1.indels[which(X18r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X18r1.indels$indel_frame == 0)))
+X18r1.indels[which(X18r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X18r1.indels$indel_frame != 0)))
+X18r1.indels$post_pre_ratio_synnorm <- X18r1.indels$post_pre_ratio/X18r1_tSNV_syn_post_pre_med
+X18r2.indels$post_pre_ratio_synnorm <- X18r2.indels$post_pre_ratio/X18r2_tSNV_syn_post_pre_med
+X18r1r2.indels <- X18r1.indels[which(X18r1.indels$variant %in% X18r2.indels$variant),]
+X18r2r1.indels <- X18r2.indels[which(X18r2.indels$variant %in% X18r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X18r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X18r1r2.indels <- merge(X18r1r2.indels,X18r2r1.indels,by='variant')
+X18r1r2.indels$post_pre_ratio_r1r2 <- (X18r1r2.indels$post_pre_ratio+X18r1r2.indels$r2_post_pre_ratio)/2
+X18r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X18r1r2.indels$post_pre_ratio_synnorm+X18r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X18r1r2.indels.true <- X18r1r2.indels[which(X18r1r2.indels$true_indel == 'True' | X18r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X18r1r2.indels.true[which(X18r1r2.indels.true$indel_type == 'D' | X18r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X18rL41.indel_file <- paste(experiment_dir_170731,'X18rL41','_annotated_sindels.txt',sep='')
+X18rL42.indel_file <- paste(experiment_dir_170731,'X18rL42','_annotated_sindels.txt',sep='')
+X18rL41.indels <- read.table(X18rL41.indel_file, header=TRUE, sep="\t")
+X18rL42.indels <- read.table(X18rL42.indel_file, header=TRUE, sep="\t")
+
+X18rL41.indels$exon <- 'X18'
+X18rL41.indels$frame <- 'NA'
+X18rL41.indels[which(X18rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X18rL41.indels$indel_frame == 0)))
+X18rL41.indels[which(X18rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X18rL41.indels$indel_frame != 0)))
+X18rL41.indels$post_pre_ratio_synnorm <- X18rL41.indels$post_pre_ratio/X18rL41_tSNV_syn_post_pre_med
+X18rL42.indels$post_pre_ratio_synnorm <- X18rL42.indels$post_pre_ratio/X18rL42_tSNV_syn_post_pre_med
+
+X18rL41rL42.indels <- X18rL41.indels[which(X18rL41.indels$variant %in% X18rL42.indels$variant),]
+X18rL42rL41.indels <- X18rL42.indels[which(X18rL42.indels$variant %in% X18rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X18rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X18rL41rL42.indels <- merge(X18rL41rL42.indels,X18rL42rL41.indels,by='variant')
+X18rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X18rL41rL42.indels$post_pre_ratio+X18rL41rL42.indels$rL42_post_pre_ratio)/2
+X18rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X18rL41rL42.indels$post_pre_ratio_synnorm+X18rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X18rL41rL42.indels.true <- X18rL41rL42.indels[which(X18rL41rL42.indels$true_indel == 'True' | X18rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X18rL41rL42.indels.true[which(X18rL41rL42.indels.true$indel_type == 'D' | X18rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X18r1.indels)
+rm(X18r2.indels)
+rm(X18r2r1.indels)
+rm(X18rL41.indels)
+rm(X18rL42.indels)
+rm(X18rL42rL41.indels)
+```
+
+```{r}
+X19r1.indel_file <- paste(experiment_dir_171011,'X19r1','_annotated_sindels.txt',sep='')
+X19r2.indel_file <- paste(experiment_dir_171011,'X19r2','_annotated_sindels.txt',sep='')
+X19r1.indels <- read.table(X19r1.indel_file, header=TRUE, sep="\t")
+X19r2.indels <- read.table(X19r2.indel_file, header=TRUE, sep="\t")
+X19r1.indels$exon <- 'X19'
+X19r1.indels$frame <- 'NA'
+X19r1.indels[which(X19r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X19r1.indels$indel_frame == 0)))
+X19r1.indels[which(X19r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X19r1.indels$indel_frame != 0)))
+X19r1.indels$post_pre_ratio_synnorm <- X19r1.indels$post_pre_ratio/X19r1_tSNV_syn_post_pre_med
+X19r2.indels$post_pre_ratio_synnorm <- X19r2.indels$post_pre_ratio/X19r2_tSNV_syn_post_pre_med
+X19r1r2.indels <- X19r1.indels[which(X19r1.indels$variant %in% X19r2.indels$variant),]
+X19r2r1.indels <- X19r2.indels[which(X19r2.indels$variant %in% X19r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X19r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X19r1r2.indels <- merge(X19r1r2.indels,X19r2r1.indels,by='variant')
+X19r1r2.indels$post_pre_ratio_r1r2 <- (X19r1r2.indels$post_pre_ratio+X19r1r2.indels$r2_post_pre_ratio)/2
+X19r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X19r1r2.indels$post_pre_ratio_synnorm+X19r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X19r1r2.indels.true <- X19r1r2.indels[which(X19r1r2.indels$true_indel == 'True' | X19r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X19r1r2.indels.true[which(X19r1r2.indels.true$indel_type == 'D' | X19r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X19rL41.indel_file <- paste(experiment_dir_170731,'X19rL41','_annotated_sindels.txt',sep='')
+X19rL42.indel_file <- paste(experiment_dir_170731,'X19rL42','_annotated_sindels.txt',sep='')
+X19rL41.indels <- read.table(X19rL41.indel_file, header=TRUE, sep="\t")
+X19rL42.indels <- read.table(X19rL42.indel_file, header=TRUE, sep="\t")
+
+X19rL41.indels$exon <- 'X19'
+X19rL41.indels$frame <- 'NA'
+X19rL41.indels[which(X19rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X19rL41.indels$indel_frame == 0)))
+X19rL41.indels[which(X19rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X19rL41.indels$indel_frame != 0)))
+X19rL41.indels$post_pre_ratio_synnorm <- X19rL41.indels$post_pre_ratio/X19rL41_tSNV_syn_post_pre_med
+X19rL42.indels$post_pre_ratio_synnorm <- X19rL42.indels$post_pre_ratio/X19rL42_tSNV_syn_post_pre_med
+
+X19rL41rL42.indels <- X19rL41.indels[which(X19rL41.indels$variant %in% X19rL42.indels$variant),]
+X19rL42rL41.indels <- X19rL42.indels[which(X19rL42.indels$variant %in% X19rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X19rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X19rL41rL42.indels <- merge(X19rL41rL42.indels,X19rL42rL41.indels,by='variant')
+X19rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X19rL41rL42.indels$post_pre_ratio+X19rL41rL42.indels$rL42_post_pre_ratio)/2
+X19rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X19rL41rL42.indels$post_pre_ratio_synnorm+X19rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X19rL41rL42.indels.true <- X19rL41rL42.indels[which(X19rL41rL42.indels$true_indel == 'True' | X19rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X19rL41rL42.indels.true[which(X19rL41rL42.indels.true$indel_type == 'D' | X19rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X19r1.indels)
+rm(X19r2.indels)
+rm(X19r2r1.indels)
+rm(X19rL41.indels)
+rm(X19rL42.indels)
+rm(X19rL42rL41.indels)
+```
+
+```{r}
+X20r1.indel_file <- paste(experiment_dir_171011,'X20r1','_annotated_sindels.txt',sep='')
+X20r2.indel_file <- paste(experiment_dir_171011,'X20r2','_annotated_sindels.txt',sep='')
+X20r1.indels <- read.table(X20r1.indel_file, header=TRUE, sep="\t")
+X20r2.indels <- read.table(X20r2.indel_file, header=TRUE, sep="\t")
+X20r1.indels$exon <- 'X20'
+X20r1.indels$frame <- 'NA'
+X20r1.indels[which(X20r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X20r1.indels$indel_frame == 0)))
+X20r1.indels[which(X20r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X20r1.indels$indel_frame != 0)))
+X20r1.indels$post_pre_ratio_synnorm <- X20r1.indels$post_pre_ratio/X20r1_tSNV_syn_post_pre_med
+X20r2.indels$post_pre_ratio_synnorm <- X20r2.indels$post_pre_ratio/X20r2_tSNV_syn_post_pre_med
+X20r1r2.indels <- X20r1.indels[which(X20r1.indels$variant %in% X20r2.indels$variant),]
+X20r2r1.indels <- X20r2.indels[which(X20r2.indels$variant %in% X20r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X20r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X20r1r2.indels <- merge(X20r1r2.indels,X20r2r1.indels,by='variant')
+X20r1r2.indels$post_pre_ratio_r1r2 <- (X20r1r2.indels$post_pre_ratio+X20r1r2.indels$r2_post_pre_ratio)/2
+X20r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X20r1r2.indels$post_pre_ratio_synnorm+X20r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X20r1r2.indels.true <- X20r1r2.indels[which(X20r1r2.indels$true_indel == 'True' | X20r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X20r1r2.indels.true[which(X20r1r2.indels.true$indel_type == 'D' | X20r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X20rL41.indel_file <- paste(experiment_dir_170731,'X20rL41','_annotated_sindels.txt',sep='')
+X20rL42.indel_file <- paste(experiment_dir_170731,'X20rL42','_annotated_sindels.txt',sep='')
+X20rL41.indels <- read.table(X20rL41.indel_file, header=TRUE, sep="\t")
+X20rL42.indels <- read.table(X20rL42.indel_file, header=TRUE, sep="\t")
+
+X20rL41.indels$exon <- 'X20'
+X20rL41.indels$frame <- 'NA'
+X20rL41.indels[which(X20rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X20rL41.indels$indel_frame == 0)))
+X20rL41.indels[which(X20rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X20rL41.indels$indel_frame != 0)))
+X20rL41.indels$post_pre_ratio_synnorm <- X20rL41.indels$post_pre_ratio/X20rL41_tSNV_syn_post_pre_med
+X20rL42.indels$post_pre_ratio_synnorm <- X20rL42.indels$post_pre_ratio/X20rL42_tSNV_syn_post_pre_med
+
+X20rL41rL42.indels <- X20rL41.indels[which(X20rL41.indels$variant %in% X20rL42.indels$variant),]
+X20rL42rL41.indels <- X20rL42.indels[which(X20rL42.indels$variant %in% X20rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X20rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X20rL41rL42.indels <- merge(X20rL41rL42.indels,X20rL42rL41.indels,by='variant')
+X20rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X20rL41rL42.indels$post_pre_ratio+X20rL41rL42.indels$rL42_post_pre_ratio)/2
+X20rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X20rL41rL42.indels$post_pre_ratio_synnorm+X20rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X20rL41rL42.indels.true <- X20rL41rL42.indels[which(X20rL41rL42.indels$true_indel == 'True' | X20rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X20rL41rL42.indels.true[which(X20rL41rL42.indels.true$indel_type == 'D' | X20rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X20r1.indels)
+rm(X20r2.indels)
+rm(X20r2r1.indels)
+rm(X20rL41.indels)
+rm(X20rL42.indels)
+rm(X20rL42rL41.indels)
+```
+
+```{r}
+X21r1.indel_file <- paste(experiment_dir_171011,'X21r3','_annotated_sindels.txt',sep='')
+X21r2.indel_file <- paste(experiment_dir_171011,'X21r4','_annotated_sindels.txt',sep='')
+X21r1.indels <- read.table(X21r1.indel_file, header=TRUE, sep="\t")
+X21r2.indels <- read.table(X21r2.indel_file, header=TRUE, sep="\t")
+X21r1.indels$exon <- 'X21'
+X21r1.indels$frame <- 'NA'
+X21r1.indels[which(X21r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X21r1.indels$indel_frame == 0)))
+X21r1.indels[which(X21r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X21r1.indels$indel_frame != 0)))
+X21r1.indels$post_pre_ratio_synnorm <- X21r1.indels$post_pre_ratio/X21r1_tSNV_syn_post_pre_med
+X21r2.indels$post_pre_ratio_synnorm <- X21r2.indels$post_pre_ratio/X21r2_tSNV_syn_post_pre_med
+X21r1r2.indels <- X21r1.indels[which(X21r1.indels$variant %in% X21r2.indels$variant),]
+X21r2r1.indels <- X21r2.indels[which(X21r2.indels$variant %in% X21r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X21r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X21r1r2.indels <- merge(X21r1r2.indels,X21r2r1.indels,by='variant')
+X21r1r2.indels$post_pre_ratio_r1r2 <- (X21r1r2.indels$post_pre_ratio+X21r1r2.indels$r2_post_pre_ratio)/2
+X21r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X21r1r2.indels$post_pre_ratio_synnorm+X21r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X21r1r2.indels.true <- X21r1r2.indels[which(X21r1r2.indels$true_indel == 'True' | X21r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X21r1r2.indels.true[which(X21r1r2.indels.true$indel_type == 'D' | X21r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X21rL41.indel_file <- paste(experiment_dir_170731,'X21rL41','_annotated_sindels.txt',sep='')
+X21rL42.indel_file <- paste(experiment_dir_170731,'X21rL42','_annotated_sindels.txt',sep='')
+X21rL41.indels <- read.table(X21rL41.indel_file, header=TRUE, sep="\t")
+X21rL42.indels <- read.table(X21rL42.indel_file, header=TRUE, sep="\t")
+
+X21rL41.indels$exon <- 'X21'
+X21rL41.indels$frame <- 'NA'
+X21rL41.indels[which(X21rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X21rL41.indels$indel_frame == 0)))
+X21rL41.indels[which(X21rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X21rL41.indels$indel_frame != 0)))
+X21rL41.indels$post_pre_ratio_synnorm <- X21rL41.indels$post_pre_ratio/X21rL41_tSNV_syn_post_pre_med
+X21rL42.indels$post_pre_ratio_synnorm <- X21rL42.indels$post_pre_ratio/X21rL42_tSNV_syn_post_pre_med
+
+X21rL41rL42.indels <- X21rL41.indels[which(X21rL41.indels$variant %in% X21rL42.indels$variant),]
+X21rL42rL41.indels <- X21rL42.indels[which(X21rL42.indels$variant %in% X21rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X21rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X21rL41rL42.indels <- merge(X21rL41rL42.indels,X21rL42rL41.indels,by='variant')
+X21rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X21rL41rL42.indels$post_pre_ratio+X21rL41rL42.indels$rL42_post_pre_ratio)/2
+X21rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X21rL41rL42.indels$post_pre_ratio_synnorm+X21rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X21rL41rL42.indels.true <- X21rL41rL42.indels[which(X21rL41rL42.indels$true_indel == 'True' | X21rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X21rL41rL42.indels.true[which(X21rL41rL42.indels.true$indel_type == 'D' | X21rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X21r1.indels)
+rm(X21r2.indels)
+rm(X21r2r1.indels)
+rm(X21rL41.indels)
+rm(X21rL42.indels)
+rm(X21rL42rL41.indels)
+```
+
+```{r}
+X22r1.indel_file <- paste(experiment_dir_171011,'X22r1','_annotated_sindels.txt',sep='')
+X22r2.indel_file <- paste(experiment_dir_171011,'X22r2','_annotated_sindels.txt',sep='')
+X22r1.indels <- read.table(X22r1.indel_file, header=TRUE, sep="\t")
+X22r2.indels <- read.table(X22r2.indel_file, header=TRUE, sep="\t")
+X22r1.indels$exon <- 'X22'
+X22r1.indels$frame <- 'NA'
+X22r1.indels[which(X22r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X22r1.indels$indel_frame == 0)))
+X22r1.indels[which(X22r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X22r1.indels$indel_frame != 0)))
+X22r1.indels$post_pre_ratio_synnorm <- X22r1.indels$post_pre_ratio/X22r1_tSNV_syn_post_pre_med
+X22r2.indels$post_pre_ratio_synnorm <- X22r2.indels$post_pre_ratio/X22r2_tSNV_syn_post_pre_med
+X22r1r2.indels <- X22r1.indels[which(X22r1.indels$variant %in% X22r2.indels$variant),]
+X22r2r1.indels <- X22r2.indels[which(X22r2.indels$variant %in% X22r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X22r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X22r1r2.indels <- merge(X22r1r2.indels,X22r2r1.indels,by='variant')
+X22r1r2.indels$post_pre_ratio_r1r2 <- (X22r1r2.indels$post_pre_ratio+X22r1r2.indels$r2_post_pre_ratio)/2
+X22r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X22r1r2.indels$post_pre_ratio_synnorm+X22r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X22r1r2.indels.true <- X22r1r2.indels[which(X22r1r2.indels$true_indel == 'True' | X22r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X22r1r2.indels.true[which(X22r1r2.indels.true$indel_type == 'D' | X22r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X22rL41.indel_file <- paste(experiment_dir_170731,'X22rL41','_annotated_sindels.txt',sep='')
+X22rL42.indel_file <- paste(experiment_dir_170731,'X22rL42','_annotated_sindels.txt',sep='')
+X22rL41.indels <- read.table(X22rL41.indel_file, header=TRUE, sep="\t")
+X22rL42.indels <- read.table(X22rL42.indel_file, header=TRUE, sep="\t")
+
+X22rL41.indels$exon <- 'X22'
+X22rL41.indels$frame <- 'NA'
+X22rL41.indels[which(X22rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X22rL41.indels$indel_frame == 0)))
+X22rL41.indels[which(X22rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X22rL41.indels$indel_frame != 0)))
+X22rL41.indels$post_pre_ratio_synnorm <- X22rL41.indels$post_pre_ratio/X22rL41_tSNV_syn_post_pre_med
+X22rL42.indels$post_pre_ratio_synnorm <- X22rL42.indels$post_pre_ratio/X22rL42_tSNV_syn_post_pre_med
+
+X22rL41rL42.indels <- X22rL41.indels[which(X22rL41.indels$variant %in% X22rL42.indels$variant),]
+X22rL42rL41.indels <- X22rL42.indels[which(X22rL42.indels$variant %in% X22rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X22rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X22rL41rL42.indels <- merge(X22rL41rL42.indels,X22rL42rL41.indels,by='variant')
+X22rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X22rL41rL42.indels$post_pre_ratio+X22rL41rL42.indels$rL42_post_pre_ratio)/2
+X22rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X22rL41rL42.indels$post_pre_ratio_synnorm+X22rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X22rL41rL42.indels.true <- X22rL41rL42.indels[which(X22rL41rL42.indels$true_indel == 'True' | X22rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X22rL41rL42.indels.true[which(X22rL41rL42.indels.true$indel_type == 'D' | X22rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X22r1.indels)
+rm(X22r2.indels)
+rm(X22r2r1.indels)
+rm(X22rL41.indels)
+rm(X22rL42.indels)
+rm(X22rL42rL41.indels)
+```
+
+```{r}
+X23r1.indel_file <- paste(experiment_dir_171011,'X23r1','_annotated_sindels.txt',sep='')
+X23r2.indel_file <- paste(experiment_dir_171011,'X23r2','_annotated_sindels.txt',sep='')
+X23r1.indels <- read.table(X23r1.indel_file, header=TRUE, sep="\t")
+X23r2.indels <- read.table(X23r2.indel_file, header=TRUE, sep="\t")
+X23r1.indels$exon <- 'X23'
+X23r1.indels$frame <- 'NA'
+X23r1.indels[which(X23r1.indels$indel_frame == 0),]$frame = rep('in',length(which(X23r1.indels$indel_frame == 0)))
+X23r1.indels[which(X23r1.indels$indel_frame != 0),]$frame = rep('out',length(which(X23r1.indels$indel_frame != 0)))
+X23r1.indels$post_pre_ratio_synnorm <- X23r1.indels$post_pre_ratio/X23r1_tSNV_syn_post_pre_med
+X23r2.indels$post_pre_ratio_synnorm <- X23r2.indels$post_pre_ratio/X23r2_tSNV_syn_post_pre_med
+X23r1r2.indels <- X23r1.indels[which(X23r1.indels$variant %in% X23r2.indels$variant),]
+X23r2r1.indels <- X23r2.indels[which(X23r2.indels$variant %in% X23r1.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X23r2r1.indels) <- c('variant','r2_post_pre_ratio','r2_post_pre_ratio_synnorm')
+X23r1r2.indels <- merge(X23r1r2.indels,X23r2r1.indels,by='variant')
+X23r1r2.indels$post_pre_ratio_r1r2 <- (X23r1r2.indels$post_pre_ratio+X23r1r2.indels$r2_post_pre_ratio)/2
+X23r1r2.indels$post_pre_ratio_synnorm_r1r2 <- (X23r1r2.indels$post_pre_ratio_synnorm+X23r1r2.indels$r2_post_pre_ratio_synnorm)/2 
+X23r1r2.indels.true <- X23r1r2.indels[which(X23r1r2.indels$true_indel == 'True' | X23r1r2.indels$true_indel == 'WT'),]
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X23r1r2.indels.true[which(X23r1r2.indels.true$indel_type == 'D' | X23r1r2.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+X23rL41.indel_file <- paste(experiment_dir_170731,'X23rL41','_annotated_sindels.txt',sep='')
+X23rL42.indel_file <- paste(experiment_dir_170731,'X23rL42','_annotated_sindels.txt',sep='')
+X23rL41.indels <- read.table(X23rL41.indel_file, header=TRUE, sep="\t")
+X23rL42.indels <- read.table(X23rL42.indel_file, header=TRUE, sep="\t")
+
+X23rL41.indels$exon <- 'X23'
+X23rL41.indels$frame <- 'NA'
+X23rL41.indels[which(X23rL41.indels$indel_frame == 0),]$frame = rep('in',length(which(X23rL41.indels$indel_frame == 0)))
+X23rL41.indels[which(X23rL41.indels$indel_frame != 0),]$frame = rep('out',length(which(X23rL41.indels$indel_frame != 0)))
+X23rL41.indels$post_pre_ratio_synnorm <- X23rL41.indels$post_pre_ratio/X23rL41_tSNV_syn_post_pre_med
+X23rL42.indels$post_pre_ratio_synnorm <- X23rL42.indels$post_pre_ratio/X23rL42_tSNV_syn_post_pre_med
+
+X23rL41rL42.indels <- X23rL41.indels[which(X23rL41.indels$variant %in% X23rL42.indels$variant),]
+X23rL42rL41.indels <- X23rL42.indels[which(X23rL42.indels$variant %in% X23rL41.indels$variant),c('variant','post_pre_ratio','post_pre_ratio_synnorm')]
+colnames(X23rL42rL41.indels) <- c('variant','rL42_post_pre_ratio','rL42_post_pre_ratio_synnorm')
+X23rL41rL42.indels <- merge(X23rL41rL42.indels,X23rL42rL41.indels,by='variant')
+X23rL41rL42.indels$post_pre_ratio_rL41rL42 <- (X23rL41rL42.indels$post_pre_ratio+X23rL41rL42.indels$rL42_post_pre_ratio)/2
+X23rL41rL42.indels$post_pre_ratio_synnorm_rL41rL42 <- (X23rL41rL42.indels$post_pre_ratio_synnorm+X23rL41rL42.indels$rL42_post_pre_ratio_synnorm)/2 
+X23rL41rL42.indels.true <- X23rL41rL42.indels[which(X23rL41rL42.indels$true_indel == 'True' | X23rL41rL42.indels$true_indel == 'WT'),]
+
+#temp for faceting later, post_pre_ratio_synnorm by frame
+ggplot(X23rL41rL42.indels.true[which(X23rL41rL42.indels.true$indel_type == 'D' | X23rL41rL42.indels.true$indel_type == 'I'),])+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_rL41rL42),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+rm(X23r1.indels)
+rm(X23r2.indels)
+rm(X23r2r1.indels)
+rm(X23rL41.indels)
+rm(X23rL42.indels)
+rm(X23rL42rL41.indels)
+```
+
+
+```{r}
+gc()
+
+Xr_all_indels.true <- rbind(X2r1r2.indels.true,X3r1r2.indels.true,X4r1r2.indels.true,X5r1r2.indels.true,X15r1r2.indels.true,X16r1r2.indels.true,X17r1r2.indels.true,X18r1r2.indels.true,X19r1r2.indels.true,X20r1r2.indels.true,X21r1r2.indels.true,X22r1r2.indels.true,X23r1r2.indels.true)
+Xr_all_indels.true$cell.type <- 'HAP1'
+XrL4_all_indels.true <- rbind(X2rL41rL42.indels.true,X3rL41rL42.indels.true,X4rL41rL42.indels.true,X5rL41rL42.indels.true,X15rL41rL42.indels.true,X16rL41rL42.indels.true,X17rL41rL42.indels.true,X18rL41rL42.indels.true,X19rL41rL42.indels.true,X20rL41rL42.indels.true,X21rL41rL42.indels.true,X22rL41rL42.indels.true,X23rL41rL42.indels.true)
+XrL4_all_indels.true$cell.type <- 'HAP1-Lig4KO'
+#failed to merge these two based on name -- only merge select columns and rename.
+#rename the replicate columns for HAP1-Lig4KO DF to math r1r2 format:
+colnames(XrL4_all_indels.true)[140:143] <- c("r2_post_pre_ratio","r2_post_pre_ratio_synnorm","post_pre_ratio_r1r2","post_pre_ratio_synnorm_r1r2")
+X_SGE_all_indels.true <- rbind(Xr_all_indels.true[,c('variant','indel_type','indel_size','indel_start_pos','post_pre_ratio','post_pre_ratio_synnorm',"r2_post_pre_ratio","r2_post_pre_ratio_synnorm","post_pre_ratio_r1r2","post_pre_ratio_synnorm_r1r2",'frame','exon','cell.type')],XrL4_all_indels.true[,c('variant','indel_type','indel_size','indel_start_pos','post_pre_ratio','post_pre_ratio_synnorm',"r2_post_pre_ratio","r2_post_pre_ratio_synnorm","post_pre_ratio_r1r2","post_pre_ratio_synnorm_r1r2",'frame','exon','cell.type')])
+
+ggplot(X_SGE_all_indels.true)+geom_jitter(aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.5,height=0)+geom_hline(yintercept=0,lty=2)
+
+X_SGE_all_indels.true$exon = factor(X_SGE_all_indels.true$exon, levels =  c('X2','X3','X4','X5','X15','X16','X17','X18','X19','X20','X21','X22','X23'))
+
+ggplot(X_SGE_all_indels.true)+geom_jitter(data = X_SGE_all_indels.true[which(X_SGE_all_indels.true$indel_type == 'D' | X_SGE_all_indels.true$indel_type == 'I' ),] ,aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.7,height=0,alpha=0.4)+geom_jitter(data = X_SGE_all_indels.true[which(X_SGE_all_indels.true$indel_type == 'WT'),] ,aes(x=frame, y=log10(post_pre_ratio_synnorm_r1r2),color=indel_type),width=0.7,height=0,alpha=1)+scale_color_manual(values = c("D" = "#CE005A", "I" = "#037398", "WT" = "#000C10" ),labels=c('Deletion','Insertion','Unedited'))+geom_hline(yintercept=0,lty=2)+theme(panel.background = element_rect(fill = 'gray90', colour = 'white'))+theme(legend.title=element_blank(),legend.key = element_blank())+ylab('D11/D5 enrichment')+xlab('Frame')+theme(panel.background = element_rect(fill = 'white', colour = 'white'))+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=12),strip.background = element_blank())+facet_grid(exon ~ cell.type,scales="free")
+
+
+
+
+#excluding X22 and X15
+ggplot(X_SGE_all_indels.true[which(!((X_SGE_all_indels.true$exon == 'X22' & X_SGE_all_indels.true$cell.type == 'HAP1') | (X_SGE_all_indels.true$exon == 'X15' & X_SGE_all_indels.true$cell.type == 'HAP1')  ) & (X_SGE_all_indels.true$indel_type == 'D' | X_SGE_all_indels.true$indel_type == 'I' ) ),])+geom_histogram(aes(x=log10(post_pre_ratio_synnorm_r1r2),fill=frame),alpha=1)+geom_vline(xintercept=0,lty=3)+theme(panel.background = element_rect(fill = 'white', colour = 'gray90'))+theme(legend.title=element_blank(),legend.key = element_blank())+ylab('Indel events')+xlab('Day 11 over Day 5 (log-10)')+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=12),strip.background = element_blank())+facet_grid(exon ~ cell.type,scales="free_x")+scale_fill_manual(values = c("in" = "#037398", "out" = "#CE005A"),labels=c('In-frame','Frame-shifting'))
+
+#only excluding X22 ## EXPORT THIS AS A 10x6 for figure SxIndels
+ggplot(X_SGE_all_indels.true[which(!((X_SGE_all_indels.true$exon == 'X22' & X_SGE_all_indels.true$cell.type == 'HAP1') ) & (X_SGE_all_indels.true$indel_type == 'D' | X_SGE_all_indels.true$indel_type == 'I' ) ),])+geom_histogram(aes(x=log10(post_pre_ratio_synnorm_r1r2),fill=frame),alpha=1)+geom_vline(xintercept=0,lty=3)+theme(panel.background = element_rect(fill = 'white'),panel.grid.major = element_line(color = 'gray90')) +theme(legend.title=element_blank(),legend.position="bottom",legend.key.width=unit(0.3,'cm'),legend.key = element_rect(size=c(1,3)))+ylab('Indel events')+xlab('Day 11 over Day 5 (log-10)')+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=10),strip.background = element_blank())+facet_grid(exon ~ cell.type,scales="free_x")+scale_fill_manual(values = c("in" = "#037398", "out" = "#CE005A"),labels=c('In-frame','Frame-shifting'))
+
+# calculate the global p-value and stick it on the chart -- doesn't work w. facet, only global.
+#+geom_text(x=-3,y=60,aes(label = paste('p = ',signif(wilcox.test(x=X_SGE_all_indels.true[which(X_SGE_all_indels.true$frame == 'in'),]$post_pre_ratio_synnorm,y=X_SGE_all_indels.true[which(X_SGE_all_indels.true$frame == 'out'),]$post_pre_ratio_synnorm,correct = FALSE)$p.value,digits=3))),size=2)+
+
+#only LIG4_KO exps
+ggplot(X_SGE_all_indels.true[which(!(X_SGE_all_indels.true$cell.type == 'HAP1') & (X_SGE_all_indels.true$indel_type == 'D' | X_SGE_all_indels.true$indel_type == 'I' ) ),])+geom_histogram(aes(x=log10(post_pre_ratio_synnorm_r1r2),fill=frame),alpha=1)+geom_vline(xintercept=0,lty=3)+theme(panel.background = element_rect(fill = 'white', colour = 'gray90'))+theme(legend.title=element_blank(),legend.key = element_blank(),legend.position="bottom")+ylab('Indel events')+xlab('Day 11 over Day 5 (log-10)')+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=12),strip.background = element_blank())+facet_grid(exon ~ cell.type,scales="free_x")+scale_fill_manual(values = c("in" = "#037398", "out" = "#CE005A"),labels=c('In-frame','Frame-shifting'))
+
+#indel size by type, exon, and cell.type (note, this is for unique indel, not scaled by proportion)
+ggplot(X_SGE_all_indels.true[which(!((X_SGE_all_indels.true$exon == 'X22' & X_SGE_all_indels.true$cell.type == 'HAP1') ) & (X_SGE_all_indels.true$indel_type == 'I' ) ),])+geom_histogram(aes(x=indel_size,fill=indel_type),alpha=1)+geom_histogram(data=X_SGE_all_indels.true[which(!((X_SGE_all_indels.true$exon == 'X22' & X_SGE_all_indels.true$cell.type == 'HAP1') ) & (X_SGE_all_indels.true$indel_type == 'D') ),],aes(x=-indel_size,fill=indel_type),alpha=1)+geom_vline(xintercept=0,lty=3)+theme(panel.background = element_rect(fill = 'white'),panel.grid.major = element_line(color = 'gray90'))+theme(legend.title=element_blank(),legend.position="bottom",legend.key.width=unit(0.3,'cm'))+ylab('Unique Indels')+xlab('Indel size')+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=10),strip.background = element_blank())+facet_grid(exon ~ cell.type,scales="free_x")+scale_fill_manual(values = c("D" = "#87003B", "I" = "#024B63", "WT" = "#000C10" ),labels=c('Deletion','Insertion','Unedited'))
+
+#indel start positions
+ggplot(X_SGE_all_indels.true[which(!((X_SGE_all_indels.true$exon == 'X22' & X_SGE_all_indels.true$cell.type == 'HAP1') ) & (X_SGE_all_indels.true$indel_type == 'D' | X_SGE_all_indels.true$indel_type == 'I' ) ),])+geom_histogram(aes(x=indel_start_pos,fill=cell.type),alpha=1)+geom_vline(xintercept=0,lty=3)+theme(panel.background = element_rect(fill = 'white'),panel.grid.major = element_line(color = 'gray90')) +theme(legend.title=element_blank(),legend.position="bottom",legend.key.width=unit(0.3,'cm'))+ylab('Unique Indels')+xlab('Indel start pos')+theme(text = element_text(size=12),axis.text.y = element_text(size=10),axis.text.x = element_text(size=10),strip.background = element_blank())+facet_grid(exon ~ .,scales="free_x")+scale_fill_manual(values = c("HAP1" = "#037398", "HAP1-Lig4KO" = "#CE005A"))
+
+
+
+
+
+```

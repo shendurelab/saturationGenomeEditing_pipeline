@@ -1,0 +1,362 @@
+---
+title: "BRCA1_SGE2_correlations_20170723"
+author: "Greg Findlay"
+date: "7/23/2017"
+output: html_document
+---
+
+```{r}
+#name yo' co's fa'sho bros:
+#for code assigning correlations to variable names, now coded out and included in the main file for the replicate
+
+#make a new table with rows as replicates and columns as correlation measurements
+#working code -- needs variables assigned for each correlation first!
+
+#Get the new correlatins you want (must have run all other SGE scripts thru global)
+#new correlations to define here.
+
+
+```
+
+```{r}
+X2r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X2r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+X2r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+X2r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+c(X2r1r2_func_cor,X2r1_func_cadd_cor,X2r2_func_cadd_cor,X2r1r2_func_cadd_cor)
+X2r1_cors_plus <- append(X2r1_cors,values = c(X2r1r2_func_cor,X2r1_func_cadd_cor, X2r1r2_func_cadd_cor))
+X2r2_cors_plus <- append(X2r2_cors,values = c(X2r1r2_func_cor,X2r2_func_cadd_cor, X2r1r2_func_cadd_cor))
+
+X3r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X3r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+X3r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+X3r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+c(X3r1r2_func_cor,X3r1_func_cadd_cor,X3r2_func_cadd_cor,X3r1r2_func_cadd_cor)
+X3r1_cors_plus <- append(X3r1_cors,values = c(X3r1r2_func_cor,X3r1_func_cadd_cor, X3r1r2_func_cadd_cor))
+X3r2_cors_plus <- append(X3r2_cors,values = c(X3r1r2_func_cor,X3r2_func_cadd_cor, X3r1r2_func_cadd_cor))
+
+X4r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X4r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+X4r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+X4r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+c(X4r1r2_func_cor,X4r1_func_cadd_cor,X4r2_func_cadd_cor,X4r1r2_func_cadd_cor)
+X4r1_cors_plus <- append(X4r1_cors,values = c(X4r1r2_func_cor,X4r1_func_cadd_cor, X4r1r2_func_cadd_cor))
+X4r2_cors_plus <- append(X4r2_cors,values = c(X4r1r2_func_cor,X4r2_func_cadd_cor, X4r1r2_func_cadd_cor))
+
+X5r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X5r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+X5r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+X5r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+c(X5r1r2_func_cor,X5r1_func_cadd_cor,X5r2_func_cadd_cor,X5r1r2_func_cadd_cor)
+X5r1_cors_plus <- append(X5r1_cors,values = c(X5r1r2_func_cor,X5r1_func_cadd_cor, X5r1r2_func_cadd_cor))
+X5r2_cors_plus <- append(X5r2_cors,values = c(X5r1r2_func_cor,X5r2_func_cadd_cor, X5r1r2_func_cadd_cor))
+
+X15r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X15r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+X15r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+X15r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+c(X15r1r2_func_cor,X15r1_func_cadd_cor,X15r2_func_cadd_cor,X15r1r2_func_cadd_cor)
+X15r1_cors_plus <- append(X15r1_cors,values = c(X15r1r2_func_cor,X15r1_func_cadd_cor, X15r1r2_func_cadd_cor))
+X15r2_cors_plus <- append(X15r2_cors,values = c(X15r1r2_func_cor,X15r2_func_cadd_cor, X15r1r2_func_cadd_cor))
+
+X16r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X16r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+X16r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+X16r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+c(X16r1r2_func_cor,X16r1_func_cadd_cor,X16r2_func_cadd_cor,X16r1r2_func_cadd_cor)
+X16r1_cors_plus <- append(X16r1_cors,values = c(X16r1r2_func_cor,X16r1_func_cadd_cor, X16r1r2_func_cadd_cor))
+X16r2_cors_plus <- append(X16r2_cors,values = c(X16r1r2_func_cor,X16r2_func_cadd_cor, X16r1r2_func_cadd_cor))
+
+X17r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X17r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+X17r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+X17r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+c(X17r1r2_func_cor,X17r1_func_cadd_cor,X17r2_func_cadd_cor,X17r1r2_func_cadd_cor)
+X17r1_cors_plus <- append(X17r1_cors,values = c(X17r1r2_func_cor,X17r1_func_cadd_cor, X17r1r2_func_cadd_cor))
+X17r2_cors_plus <- append(X17r2_cors,values = c(X17r1r2_func_cor,X17r2_func_cadd_cor, X17r1r2_func_cadd_cor))
+
+X18r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X18r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+X18r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+X18r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+c(X18r1r2_func_cor,X18r1_func_cadd_cor,X18r2_func_cadd_cor,X18r1r2_func_cadd_cor)
+X18r1_cors_plus <- append(X18r1_cors,values = c(X18r1r2_func_cor,X18r1_func_cadd_cor, X18r1r2_func_cadd_cor))
+X18r2_cors_plus <- append(X18r2_cors,values = c(X18r1r2_func_cor,X18r2_func_cadd_cor, X18r1r2_func_cadd_cor))
+
+X19r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X19r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+X19r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+X19r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+c(X19r1r2_func_cor,X19r1_func_cadd_cor,X19r2_func_cadd_cor,X19r1r2_func_cadd_cor)
+X19r1_cors_plus <- append(X19r1_cors,values = c(X19r1r2_func_cor,X19r1_func_cadd_cor, X19r1r2_func_cadd_cor))
+X19r2_cors_plus <- append(X19r2_cors,values = c(X19r1r2_func_cor,X19r2_func_cadd_cor, X19r1r2_func_cadd_cor))
+
+
+X20r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X20r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+X20r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+X20r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+c(X20r1r2_func_cor,X20r1_func_cadd_cor,X20r2_func_cadd_cor,X20r1r2_func_cadd_cor)
+X20r1_cors_plus <- append(X20r1_cors,values = c(X20r1r2_func_cor,X20r1_func_cadd_cor, X20r1r2_func_cadd_cor))
+X20r2_cors_plus <- append(X20r2_cors,values = c(X20r1r2_func_cor,X20r2_func_cadd_cor, X20r1r2_func_cadd_cor))
+
+X21r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X21r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+X21r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+X21r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+c(X21r1r2_func_cor,X21r1_func_cadd_cor,X21r2_func_cadd_cor,X21r1r2_func_cadd_cor)
+X21r1_cors_plus <- append(X21r1_cors,values = c(X21r1r2_func_cor,X21r1_func_cadd_cor, X21r1r2_func_cadd_cor))
+X21r2_cors_plus <- append(X21r2_cors,values = c(X21r1r2_func_cor,X21r2_func_cadd_cor, X21r1r2_func_cadd_cor))
+
+X22r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X22r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+X22r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+X22r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+c(X22r1r2_func_cor,X22r1_func_cadd_cor,X22r2_func_cadd_cor,X22r1r2_func_cadd_cor)
+X22r1_cors_plus <- append(X22r1_cors,values = c(X22r1r2_func_cor,X22r1_func_cadd_cor, X22r1r2_func_cadd_cor))
+X22r2_cors_plus <- append(X22r2_cors,values = c(X22r1r2_func_cor,X22r2_func_cadd_cor, X22r1r2_func_cadd_cor))
+
+X23r1r2_func_cor <- cor(Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,Xr_all_final_sns_norm[which(Xr_all_final_sns_norm$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,method='spearman')
+X23r1_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r1_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+X23r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+X23r1r2_func_cadd_cor <- cor(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_r1r2_sns_norm,as.numeric(as.character(Xr_all_final_sns_norm_filt_CADD[which(Xr_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+c(X23r1r2_func_cor,X23r1_func_cadd_cor,X23r2_func_cadd_cor,X23r1r2_func_cadd_cor)
+X23r1_cors_plus <- append(X23r1_cors,values = c(X23r1r2_func_cor,X23r1_func_cadd_cor, X23r1r2_func_cadd_cor))
+X23r2_cors_plus <- append(X23r2_cors,values = c(X23r1r2_func_cor,X23r2_func_cadd_cor, X23r1r2_func_cadd_cor))
+```
+
+
+```{r}
+X2rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X2rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+X2rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+X2rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X2'),]$CADD.phred)),method='spearman')
+c(X2rL41rL42_func_cor,X2rL41_func_cadd_cor,X2rL42_func_cadd_cor,X2rL41rL42_func_cadd_cor)
+X2rL41_cors_plus <- append(X2rL41_cors,values = c(X2rL41rL42_func_cor,X2rL41_func_cadd_cor, X2rL41rL42_func_cadd_cor))
+X2rL42_cors_plus <- append(X2rL42_cors,values = c(X2rL41rL42_func_cor,X2rL42_func_cadd_cor, X2rL41rL42_func_cadd_cor))
+
+X3rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X3rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+X3rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+X3rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X3'),]$CADD.phred)),method='spearman')
+c(X3rL41rL42_func_cor,X3rL41_func_cadd_cor,X3rL42_func_cadd_cor,X3rL41rL42_func_cadd_cor)
+X3rL41_cors_plus <- append(X3rL41_cors,values = c(X3rL41rL42_func_cor,X3rL41_func_cadd_cor, X3rL41rL42_func_cadd_cor))
+X3rL42_cors_plus <- append(X3rL42_cors,values = c(X3rL41rL42_func_cor,X3rL42_func_cadd_cor, X3rL41rL42_func_cadd_cor))
+
+X4rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X4rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+X4rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+X4rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X4'),]$CADD.phred)),method='spearman')
+c(X4rL41rL42_func_cor,X4rL41_func_cadd_cor,X4rL42_func_cadd_cor,X4rL41rL42_func_cadd_cor)
+X4rL41_cors_plus <- append(X4rL41_cors,values = c(X4rL41rL42_func_cor,X4rL41_func_cadd_cor, X4rL41rL42_func_cadd_cor))
+X4rL42_cors_plus <- append(X4rL42_cors,values = c(X4rL41rL42_func_cor,X4rL42_func_cadd_cor, X4rL41rL42_func_cadd_cor))
+
+X5rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X5rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+X5rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+X5rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X5'),]$CADD.phred)),method='spearman')
+c(X5rL41rL42_func_cor,X5rL41_func_cadd_cor,X5rL42_func_cadd_cor,X5rL41rL42_func_cadd_cor)
+X5rL41_cors_plus <- append(X5rL41_cors,values = c(X5rL41rL42_func_cor,X5rL41_func_cadd_cor, X5rL41rL42_func_cadd_cor))
+X5rL42_cors_plus <- append(X5rL42_cors,values = c(X5rL41rL42_func_cor,X5rL42_func_cadd_cor, X5rL41rL42_func_cadd_cor))
+
+X15rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X15rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+X15rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+X15rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X15'),]$CADD.phred)),method='spearman')
+c(X15rL41rL42_func_cor,X15rL41_func_cadd_cor,X15rL42_func_cadd_cor,X15rL41rL42_func_cadd_cor)
+X15rL41_cors_plus <- append(X15rL41_cors,values = c(X15rL41rL42_func_cor,X15rL41_func_cadd_cor, X15rL41rL42_func_cadd_cor))
+X15rL42_cors_plus <- append(X15rL42_cors,values = c(X15rL41rL42_func_cor,X15rL42_func_cadd_cor, X15rL41rL42_func_cadd_cor))
+
+X16rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X16rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+X16rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+X16rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X16'),]$CADD.phred)),method='spearman')
+c(X16rL41rL42_func_cor,X16rL41_func_cadd_cor,X16rL42_func_cadd_cor,X16rL41rL42_func_cadd_cor)
+X16rL41_cors_plus <- append(X16rL41_cors,values = c(X16rL41rL42_func_cor,X16rL41_func_cadd_cor, X16rL41rL42_func_cadd_cor))
+X16rL42_cors_plus <- append(X16rL42_cors,values = c(X16rL41rL42_func_cor,X16rL42_func_cadd_cor, X16rL41rL42_func_cadd_cor))
+
+X17rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X17rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+X17rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+X17rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X17'),]$CADD.phred)),method='spearman')
+c(X17rL41rL42_func_cor,X17rL41_func_cadd_cor,X17rL42_func_cadd_cor,X17rL41rL42_func_cadd_cor)
+X17rL41_cors_plus <- append(X17rL41_cors,values = c(X17rL41rL42_func_cor,X17rL41_func_cadd_cor, X17rL41rL42_func_cadd_cor))
+X17rL42_cors_plus <- append(X17rL42_cors,values = c(X17rL41rL42_func_cor,X17rL42_func_cadd_cor, X17rL41rL42_func_cadd_cor))
+
+X18rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X18rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+X18rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+X18rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X18'),]$CADD.phred)),method='spearman')
+c(X18rL41rL42_func_cor,X18rL41_func_cadd_cor,X18rL42_func_cadd_cor,X18rL41rL42_func_cadd_cor)
+X18rL41_cors_plus <- append(X18rL41_cors,values = c(X18rL41rL42_func_cor,X18rL41_func_cadd_cor, X18rL41rL42_func_cadd_cor))
+X18rL42_cors_plus <- append(X18rL42_cors,values = c(X18rL41rL42_func_cor,X18rL42_func_cadd_cor, X18rL41rL42_func_cadd_cor))
+
+X19rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X19rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+X19rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+X19rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X19'),]$CADD.phred)),method='spearman')
+c(X19rL41rL42_func_cor,X19rL41_func_cadd_cor,X19rL42_func_cadd_cor,X19rL41rL42_func_cadd_cor)
+X19rL41_cors_plus <- append(X19rL41_cors,values = c(X19rL41rL42_func_cor,X19rL41_func_cadd_cor, X19rL41rL42_func_cadd_cor))
+X19rL42_cors_plus <- append(X19rL42_cors,values = c(X19rL41rL42_func_cor,X19rL42_func_cadd_cor, X19rL41rL42_func_cadd_cor))
+
+
+X20rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X20rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+X20rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+X20rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X20'),]$CADD.phred)),method='spearman')
+c(X20rL41rL42_func_cor,X20rL41_func_cadd_cor,X20rL42_func_cadd_cor,X20rL41rL42_func_cadd_cor)
+X20rL41_cors_plus <- append(X20rL41_cors,values = c(X20rL41rL42_func_cor,X20rL41_func_cadd_cor, X20rL41rL42_func_cadd_cor))
+X20rL42_cors_plus <- append(X20rL42_cors,values = c(X20rL41rL42_func_cor,X20rL42_func_cadd_cor, X20rL41rL42_func_cadd_cor))
+
+X21rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X21rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+X21rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+X21rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X21'),]$CADD.phred)),method='spearman')
+c(X21rL41rL42_func_cor,X21rL41_func_cadd_cor,X21rL42_func_cadd_cor,X21rL41rL42_func_cadd_cor)
+X21rL41_cors_plus <- append(X21rL41_cors,values = c(X21rL41rL42_func_cor,X21rL41_func_cadd_cor, X21rL41rL42_func_cadd_cor))
+X21rL42_cors_plus <- append(X21rL42_cors,values = c(X21rL41rL42_func_cor,X21rL42_func_cadd_cor, X21rL41rL42_func_cadd_cor))
+
+X22rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X22rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+X22rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+X22rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X22'),]$CADD.phred)),method='spearman')
+c(X22rL41rL42_func_cor,X22rL41_func_cadd_cor,X22rL42_func_cadd_cor,X22rL41rL42_func_cadd_cor)
+X22rL41_cors_plus <- append(X22rL41_cors,values = c(X22rL41rL42_func_cor,X22rL41_func_cadd_cor, X22rL41rL42_func_cadd_cor))
+X22rL42_cors_plus <- append(X22rL42_cors,values = c(X22rL41rL42_func_cor,X22rL42_func_cadd_cor, X22rL41rL42_func_cadd_cor))
+
+X23rL41rL42_func_cor <- cor(XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,XrL4_all_final_sns_norm[which(XrL4_all_final_sns_norm$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,method='spearman')
+X23rL41_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_rL41_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+X23rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+X23rL41rL42_func_cadd_cor <- cor(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$tHDR_post_lib_loess_e.sns_rL41rL42_sns_norm,as.numeric(as.character(XrL4_all_final_sns_norm_filt_CADD[which(XrL4_all_final_sns_norm_filt_CADD$exon == 'X23'),]$CADD.phred)),method='spearman')
+c(X23rL41rL42_func_cor,X23rL41_func_cadd_cor,X23rL42_func_cadd_cor,X23rL41rL42_func_cadd_cor)
+X23rL41_cors_plus <- append(X23rL41_cors,values = c(X23rL41rL42_func_cor,X23rL41_func_cadd_cor, X23rL41rL42_func_cadd_cor))
+X23rL42_cors_plus <- append(X23rL42_cors,values = c(X23rL41rL42_func_cor,X23rL42_func_cadd_cor, X23rL41rL42_func_cadd_cor))
+```
+
+```{r}
+SGE1_corr_df <- data.frame(sample=character(),cSNV_pre_lib_cors=numeric(),tSNV_pre_lib_cors=numeric(),cSNV_post_lib_cors=numeric(),tSNV_post_lib_cors=numeric(),cSNV_post_pre_cors=numeric(),tSNV_post_pre_cors=numeric(),cSNV_rna_lib_cors=numeric(),tSNV_rna_lib_cors=numeric(),cSNV_rna_pre_cors=numeric(),tSNV_rna_pre_cors=numeric(),r1r2_cSNV_pre_cors=numeric(),r1r2_tSNV_pre_cors=numeric(),r1r2_cSNV_pre_lib_ratio_cors=numeric(),r1r2_tSNV_pre_lib_ratio_cors=numeric(),r1r2_cSNV_post_cors=numeric(),r1r2_tSNV_post_cors=numeric(),r1r2_cSNV_post_lib_ratio_cors=numeric(),r1r2_tSNV_post_lib_ratio_cors=numeric(),r1r2_cSNV_post_pre_ratio_cors=numeric(),r1r2_tSNV_post_pre_ratio_cors=numeric(),r1r2_cSNV_rna_cors=numeric(),r1r2_tSNV_rna_cors=numeric(),r1r2_tSNV_rna_pre_ratio_cors=numeric(),cSNV_pre_lib_ratio_cadd_cors=numeric(),tSNV_pre_lib_ratio_cadd_cors=numeric(),cSNV_post_lib_ratio_cadd_cors=numeric(),tSNV_post_lib_ratio_cadd_cors=numeric(),cSNV_post_pre_ratio_cadd_cors=numeric(),tSNV_post_pre_ratio_cadd_cors=numeric(),cSNV_post_pre_ratio_cadd_missense_cors=numeric(),tSNV_post_pre_ratio_cadd_missense_cors=numeric(),cSNV_post_pre_ratio_polyphen_missense_cors=numeric(),tSNV_post_pre_ratio_polyphen_missense_cors=numeric(),cSNV_post_pre_ratio_grantham_missense_cors=numeric(),tSNV_post_pre_ratio_grantham_missense_cors=numeric(),r1r2a_cSNV_pre_lib_ratio_cadd_cors=numeric(),r1r2a_tSNV_pre_lib_ratio_cadd_cors=numeric(),r1r2a_cSNV_post_lib_ratio_cadd_cors=numeric(),r1r2a_tSNV_post_lib_ratio_cadd_cors=numeric(),r1r2a_cSNV_post_pre_ratio_cadd_cors=numeric(),r1r2a_tSNV_post_pre_ratio_cadd_cors=numeric(),r1r2a_cSNV_post_pre_ratio_cadd_missense_cors=numeric(),r1r2a_tSNV_post_pre_ratio_cadd_missense_cors=numeric(),r1r2a_cSNV_post_pre_ratio_polyphen_missense_cors=numeric(),r1r2a_tSNV_post_pre_ratio_polyphen_missense_cors=numeric(),r1r2a_cSNV_post_pre_ratio_grantham_missense_cors=numeric(),r1r2a_tSNV_post_pre_ratio_grantham_missense_cors=numeric(),r1r2w_cSNV_pre_lib_ratio_cadd_cors=numeric(),r1r2w_cSNV_post_lib_ratio_cadd_cors=numeric(),r1r2w_cSNV_post_pre_ratio_cadd_cors=numeric(),r1r2w_tSNV_post_pre_ratio_cadd_cors=numeric(),r1r2_function_cors=numeric(),function_cadd_cors=numeric(),r1r2_function_cadd_cors=numeric(),stringsAsFactors=FALSE)
+
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X2r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X2r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X3r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X3r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X4r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X4r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X5r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X5r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X15r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X15r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X16r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X16r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X17r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X17r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X18r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X18r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X19r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X19r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X20r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X20r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X21r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X21r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X22r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X22r2_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X23r1_cors_plus
+SGE1_corr_df[nrow(SGE1_corr_df) + 1,] = X23r2_cors_plus
+
+
+SGE2_corr_df <- data.frame(sample=character(),cSNV_pre_lib_cors=numeric(),tSNV_pre_lib_cors=numeric(),cSNV_post_lib_cors=numeric(),tSNV_post_lib_cors=numeric(),cSNV_post_pre_cors=numeric(),tSNV_post_pre_cors=numeric(),cSNV_rna_lib_cors=numeric(),tSNV_rna_lib_cors=numeric(),cSNV_rna_pre_cors=numeric(),tSNV_rna_pre_cors=numeric(),rL41rL42_cSNV_pre_cors=numeric(),rL41rL42_tSNV_pre_cors=numeric(),rL41rL42_cSNV_pre_lib_ratio_cors=numeric(),rL41rL42_tSNV_pre_lib_ratio_cors=numeric(),rL41rL42_cSNV_post_cors=numeric(),rL41rL42_tSNV_post_cors=numeric(),rL41rL42_cSNV_post_lib_ratio_cors=numeric(),rL41rL42_tSNV_post_lib_ratio_cors=numeric(),rL41rL42_cSNV_post_pre_ratio_cors=numeric(),rL41rL42_tSNV_post_pre_ratio_cors=numeric(),rL41rL42_cSNV_rna_cors=numeric(),rL41rL42_tSNV_rna_cors=numeric(),rL41rL42_tSNV_rna_pre_ratio_cors=numeric(),cSNV_pre_lib_ratio_cadd_cors=numeric(),tSNV_pre_lib_ratio_cadd_cors=numeric(),cSNV_post_lib_ratio_cadd_cors=numeric(),tSNV_post_lib_ratio_cadd_cors=numeric(),cSNV_post_pre_ratio_cadd_cors=numeric(),tSNV_post_pre_ratio_cadd_cors=numeric(),cSNV_post_pre_ratio_cadd_missense_cors=numeric(),tSNV_post_pre_ratio_cadd_missense_cors=numeric(),cSNV_post_pre_ratio_polyphen_missense_cors=numeric(),tSNV_post_pre_ratio_polyphen_missense_cors=numeric(),cSNV_post_pre_ratio_grantham_missense_cors=numeric(),tSNV_post_pre_ratio_grantham_missense_cors=numeric(),rL41rL42a_cSNV_pre_lib_ratio_cadd_cors=numeric(),rL41rL42a_tSNV_pre_lib_ratio_cadd_cors=numeric(),rL41rL42a_cSNV_post_lib_ratio_cadd_cors=numeric(),rL41rL42a_tSNV_post_lib_ratio_cadd_cors=numeric(),rL41rL42a_cSNV_post_pre_ratio_cadd_cors=numeric(),rL41rL42a_tSNV_post_pre_ratio_cadd_cors=numeric(),rL41rL42a_cSNV_post_pre_ratio_cadd_missense_cors=numeric(),rL41rL42a_tSNV_post_pre_ratio_cadd_missense_cors=numeric(),rL41rL42a_cSNV_post_pre_ratio_polyphen_missense_cors=numeric(),rL41rL42a_tSNV_post_pre_ratio_polyphen_missense_cors=numeric(),rL41rL42a_cSNV_post_pre_ratio_grantham_missense_cors=numeric(),rL41rL42a_tSNV_post_pre_ratio_grantham_missense_cors=numeric(),rL41rL42w_cSNV_pre_lib_ratio_cadd_cors=numeric(),rL41rL42w_cSNV_post_lib_ratio_cadd_cors=numeric(),rL41rL42w_cSNV_post_pre_ratio_cadd_cors=numeric(),rL41rL42w_tSNV_post_pre_ratio_cadd_cors=numeric(),rL41rL42_function_cors=numeric(),function_cadd_cors=numeric(),rL41rL42_function_cadd_cors=numeric(),stringsAsFactors=FALSE)
+
+###SGE2 below
+
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X2rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X2rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X3rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X3rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X4rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X4rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X5rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X5rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X15rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X15rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X16rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X16rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X17rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X17rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X18rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X18rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X19rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X19rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X20rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X20rL42_cors_plus
+#SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X20rL43_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X21rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X21rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X22rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X22rL42_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X23rL41_cors_plus
+SGE2_corr_df[nrow(SGE2_corr_df) + 1,] = X23rL42_cors_plus
+
+my_palette <- colorRampPalette(c("red","white", "blue"))(n = 200)
+col_breaks = c(seq(-1,1,length=201))
+library(gplots)
+
+#for the end, after adding all data.
+row.names(SGE1_corr_df) <- SGE1_corr_df$sample
+SGE1_corr_df <- SGE1_corr_df[,2:dim(SGE1_corr_df)[2]]
+SGE1_corr_matrix <- data.matrix(SGE1_corr_df)
+SGE1_rcorr_matrix <- round(SGE1_corr_matrix, 2)
+heatmap.2(SGE1_corr_matrix, Rowv=FALSE, Colv=FALSE, dendrogram = "none", col = my_palette,breaks=col_breaks,scale="none",trace="none",density.info=c("none"),na.color="gray",cexRow=1,cexCol=1/3,key=F,lmat = rbind(4:3,2:1),lwid = c(0.1,4),lhei = c(0.1,4),cellnote=SGE1_rcorr_matrix,notecex = 0.5)
+dev.off()
+
+#for the end, after adding all data.
+row.names(SGE2_corr_df) <- SGE2_corr_df$sample
+SGE2_corr_df <- SGE2_corr_df[,2:dim(SGE2_corr_df)[2]]
+SGE2_corr_matrix <- data.matrix(SGE2_corr_df)
+SGE2_rcorr_matrix <- round(SGE2_corr_matrix, 2)
+heatmap.2(SGE2_corr_matrix, Rowv=FALSE, Colv=FALSE, dendrogram = "none", col = my_palette,breaks=col_breaks,scale="none",trace="none",density.info=c("none"),na.color="gray",cexRow=1,cexCol=1/3,key=F,lmat = rbind(4:3,2:1),lwid = c(0.1,4),lhei = c(0.1,4),cellnote=SGE2_rcorr_matrix,notecex = 0.5)
+dev.off()
+
+SGE1_tSNV_limited_corr_df <- SGE1_corr_df[,c(2,4,6,10,12,16,18,20,22,23,52,53,54)]
+
+SGE1_tSNV_limited_corr_df$tSNV_rna_pre_cors <- NA
+SGE1_tSNV_limited_corr_df$r1r2_tSNV_rna_cors <- NA
+SGE1_tSNV_limited_corr_df$r1r2_tSNV_rna_pre_ratio_cors <- NA
+
+SGE1_tSNV_limited_corr_matrix <- data.matrix(SGE1_tSNV_limited_corr_df)
+SGE1_rtSNV_limited_corr_matrix <- round(SGE1_tSNV_limited_corr_matrix, 2)
+
+SGE2_tSNV_limited_corr_df <- SGE2_corr_df[,c(2,4,6,10,12,16,18,20,22,23,52,53,54)]
+SGE2_tSNV_limited_corr_matrix <- data.matrix(SGE2_tSNV_limited_corr_df)
+SGE2_rtSNV_limited_corr_matrix <- round(SGE2_tSNV_limited_corr_matrix, 2)
+
+#export these as Landscape PDFs, 6 by 10
+
+dev.off()
+heatmap.2(SGE1_tSNV_limited_corr_matrix, Rowv=FALSE, Colv=FALSE, dendrogram = "none", col = my_palette,breaks=col_breaks,scale="none",trace="none",density.info=c("none"),na.color="gray90",cexRow=1,cexCol=1,key=F,lmat = rbind(4:3,2:1),lwid = c(0.1,4),lhei = c(0.1,4),margin=c(9,6),cellnote=SGE1_rtSNV_limited_corr_matrix,notecex = 0.8,labRow=c('Exon 2, r1','Exon 2, r2','Exon 3, r1','Exon 3, r2','Exon 4, r1','Exon 4, r2','Exon 5, r1','Exon 5, r2','Exon 15, r1','Exon 15, r2','Exon 16, r1','Exon 16, r2','Exon 17, r1','Exon 17, r2','Exon 18, r1','Exon 18, r2','Exon 19, r1','Exon 19, r2','Exon 20, r1','Exon 20, r2','Exon 21, r1','Exon 21, r2','Exon 22, r1','Exon 22, r2','Exon 23, r1','Exon 23, r2'),srtCol=45,labCol=c('D5 x lib', 'D11 x lib','D11 x D5','RNA x D5','D5 r1 x D5 r2','D11 r1 x D11 r2','D11/lib r1 x D11/lib r2','D11/D5 r1 x D11/D5 r2','RNA r1 x RNA r2','RNA/D5 r1 x RNA/D5 r2','Function R1 x Function R2','Function x CADD','Mean Function x CADD'))
+
+dev.off()
+heatmap.2(SGE2_tSNV_limited_corr_matrix, Rowv=FALSE, Colv=FALSE, dendrogram = "none", col = my_palette,breaks=col_breaks,scale="none",trace="none",density.info=c("none"),na.color="gray90",cexRow=1,cexCol=1,key=F,lmat = rbind(4:3,2:1),lwid = c(0.1,4),lhei = c(0.1,4),margin=c(9,6),cellnote=SGE2_rtSNV_limited_corr_matrix,notecex = 0.8,labRow=c('Exon 2, r1','Exon 2, r2','Exon 3, r1','Exon 3, r2','Exon 4, r1','Exon 4, r2','Exon 5, r1','Exon 5, r2','Exon 15, r1','Exon 15, r2','Exon 16, r1','Exon 16, r2','Exon 17, r1','Exon 17, r2','Exon 18, r1','Exon 18, r2','Exon 19, r1','Exon 19, r2','Exon 20, r1','Exon 20, r2','Exon 21, r1','Exon 21, r2','Exon 22, r1','Exon 22, r2','Exon 23, r1','Exon 23, r2'),srtCol=45,labCol=c('D5 x lib', 'D11 x lib','D11 x D5','RNA x D5','D5 r1 x D5 r2','D11 r1 x D11 r2','D11/lib r1 x D11/lib r2','D11/D5 r1 x D11/D5 r2','RNA r1 x RNA r2','RNA/D5 r1 x RNA/D5 r2','Function R1 x Function R2','Function x CADD','Mean Function x CADD'))
+
+#for legend only
+dev.off()
+heatmap.2(SGE2_tSNV_limited_corr_matrix, Rowv=FALSE, Colv=FALSE, dendrogram = "none", col = my_palette,trace="none",breaks=col_breaks,na.color="gray90",cexRow=1,cexCol=1,key=T,density.info=c("none"),key.xlab = c('Spearman correlation'),keysize = 3,key.title=c(''))
+#note for correlation supplemental figure (heatmap)
+#must have run X_all scripts for both SGE1 and SGE2 first.
+#must also run SGE_global scripts to get relevant data for function scores.
+
+#to modify:
+#XXX Remove RNA from SGE1 data (gray to NA)
+#Remove X22 from SGE1 data or XXX just flag it
+#XXX Remove all cHDR rows
+#XXX Remove some computational predictors (all but CADD?)
+#XXX Add final function scores between replicates
+#XXX Add individual functon scores vs. replicates
+#XXX Add averaged final function score versus CADD
+#Add global correlations, too?
+
+
+
+
+
+
+
